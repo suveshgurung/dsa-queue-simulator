@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -Wall -ggdb
 
-SRC = traffic-simulator.c
-OBJ = traffic-simulator.o
-TARGET = traffic-simulator
+SRC = simulator.c
+OBJ = simulator.o
+TARGET = simulator
 
 .PHONY: all clean
 
