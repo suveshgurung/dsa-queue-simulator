@@ -1,13 +1,19 @@
 CC = gcc
 CFLAGS = -Wall -ggdb
 
-all: traffic-simulator
+SRC = traffic-simulator.c
+OBJ = traffic-simulator.o
+TARGET = traffic-simulator
 
-traffic-simulator: traffic-simulator.o
-	$(CC) $(CFLAGS) -o traffic-simulator traffic-simulator.o
+.PHONY: all clean
 
-traffic-simulator.o: traffic-simulator.c
-	$(CC) $(CFLAGS) -c traffic-simulator.c -o traffic-simulator.o
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lSDL2
+
+$(OBJ): $(SRC)
+	$(CC) $(CFLAGS) -c $(SRC) -o $(OBJ)
 
 clean:
-	rm -rf traffic-simulator traffic-simulator.o
+	rm -rf $(TARGET) $(OBJ)
