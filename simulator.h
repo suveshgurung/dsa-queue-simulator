@@ -10,6 +10,11 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_rect.h>
 
+/* defines */
+#define WINDOW_WIDTH 900
+#define WINDOW_HEIGHT 900
+
+/* function prototypes */
 void Error_Checker(int, const char *, SDL_Window *);
 void Error_Handler(const char *, SDL_Window *);
 void Set_Road_Dimensions(SDL_Rect *, int, int, int, int);

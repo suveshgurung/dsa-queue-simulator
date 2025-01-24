@@ -6,7 +6,7 @@ int main() {
     return 1;
   }
 
-  SDL_Window *window = SDL_CreateWindow("dsa-queue-simulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, 0);
+  SDL_Window *window = SDL_CreateWindow("dsa-queue-simulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
   if (window == NULL) {
     Error_Handler("SDL_CreateWindow", window);
   }
@@ -24,8 +24,8 @@ int main() {
   SDL_Rect first_road;
   SDL_Rect second_road;
 
-  Set_Road_Dimensions(&first_road, 0, 300, 800, 200);
-  Set_Road_Dimensions(&second_road, 300, 0, 200, 800);
+  Set_Road_Dimensions(&first_road, 0, WINDOW_HEIGHT/2 - 105, WINDOW_WIDTH, 210);
+  Set_Road_Dimensions(&second_road, WINDOW_WIDTH/2 - 105, 0, 210, WINDOW_HEIGHT);
 
   /* set the color of the road */
   Error_Checker(SDL_SetRenderDrawColor(renderer, 65, 65, 65, 1), "SDL_SetRenderDrawColor", window);
