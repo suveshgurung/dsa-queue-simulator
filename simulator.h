@@ -17,4 +17,6 @@
 /* function prototypes */
 void Error_Checker(int, const char *, SDL_Window *);
 void Error_Handler(const char *, SDL_Window *);
+
 void Set_Road_Dimensions(SDL_Rect *, int, int, int, int);
+void Render_Roads_Traffic_Lights(SDL_Renderer *, SDL_Window *);
