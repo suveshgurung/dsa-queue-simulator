@@ -137,7 +137,7 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 + 35, WINDOW_HEIGHT/2 + 105, WINDOW_WIDTH/2 + 35, WINDOW_HEIGHT), "SDL_RenderDrawLine", window);
 
   /* render traffic lights */
-  SDL_Texture *traffic_light_laneA = IMG_LoadTexture(renderer, "traffic-light-laneA-go.png");
+  SDL_Texture *traffic_light_laneA = IMG_LoadTexture(renderer, "images/traffic-light-laneA-go.png");
   if (!traffic_light_laneA) {
     printf("Failed to load texture\n");
     SDL_DestroyWindow(window);
@@ -152,7 +152,7 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   traffic_light_laneA_destination.h = 72;
   SDL_RenderCopy(renderer, traffic_light_laneA, NULL, &traffic_light_laneA_destination);
 
-  SDL_Texture *traffic_light_laneB = IMG_LoadTexture(renderer, "traffic-light-laneB-go.png");
+  SDL_Texture *traffic_light_laneB = IMG_LoadTexture(renderer, "images/traffic-light-laneB-go.png");
   if (!traffic_light_laneB) {
     printf("Failed to load texture\n");
     SDL_DestroyWindow(window);
@@ -167,7 +167,7 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   traffic_light_laneB_destination.h = 72;
   SDL_RenderCopy(renderer, traffic_light_laneB, NULL, &traffic_light_laneB_destination);
 
-  SDL_Texture *traffic_light_laneC = IMG_LoadTexture(renderer, "traffic-light-laneC-go.png");
+  SDL_Texture *traffic_light_laneC = IMG_LoadTexture(renderer, "images/traffic-light-laneC-go.png");
   if (!traffic_light_laneC) {
     printf("Failed to load texture\n");
     SDL_DestroyWindow(window);
@@ -182,7 +182,7 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   traffic_light_laneC_destination.h = 72;
   SDL_RenderCopy(renderer, traffic_light_laneC, NULL, &traffic_light_laneC_destination);
 
-  SDL_Texture *traffic_light_laneD = IMG_LoadTexture(renderer, "traffic-light-laneD-go.png");
+  SDL_Texture *traffic_light_laneD = IMG_LoadTexture(renderer, "images/traffic-light-laneD-go.png");
   if (!traffic_light_laneD) {
     printf("Failed to load texture\n");
     SDL_DestroyWindow(window);
