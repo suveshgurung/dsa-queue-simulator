@@ -10,7 +10,7 @@ TARGET = simulator
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lSDL2
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lSDL2 -lSDL2_image
 
 $(OBJ): $(SRC)
 	$(CC) $(CFLAGS) -c $(SRC) -o $(OBJ)

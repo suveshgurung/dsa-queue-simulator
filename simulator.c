@@ -1,8 +1,14 @@
+/* TODO : see how to render traffic lights */
 #include "simulator.h"
 
 int main() {
   if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
     SDL_Log("SDL_Init error: %s", SDL_GetError());
+    return 1;
+  }
+
+  if (IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG) == 0) {
+    SDL_Log("IMG_Init error: %s", IMG_GetError());
     return 1;
   }
 
@@ -31,6 +37,7 @@ int main() {
   }
 
   SDL_DestroyWindow(window);
+  IMG_Quit();
   SDL_Quit();
 
   return 0;
@@ -65,6 +72,7 @@ void Error_Handler(const char *calling_function_name, SDL_Window *window) {
   if (window != NULL) {
     SDL_DestroyWindow(window);
   }
+  IMG_Quit();
   SDL_Quit();
   exit(1);
 }
@@ -123,10 +131,71 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 + 105, WINDOW_HEIGHT/2 - 35, WINDOW_WIDTH, WINDOW_HEIGHT/2 - 35), "SDL_RenderDrawLine", window);
   Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 + 105, WINDOW_HEIGHT/2 + 35, WINDOW_WIDTH, WINDOW_HEIGHT/2 + 35), "SDL_RenderDrawLine", window);
   /* y axis lanes */
-  Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 - 35, 0, WINDOW_WIDTH/2 -35, WINDOW_HEIGHT/2 - 105), "SDL_RenderDrawLine", window);
+  Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 - 35, 0, WINDOW_WIDTH/2 - 35, WINDOW_HEIGHT/2 - 105), "SDL_RenderDrawLine", window);
   Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 + 35, 0, WINDOW_WIDTH/2 + 35, WINDOW_HEIGHT/2 - 105), "SDL_RenderDrawLine", window);
   Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 - 35, WINDOW_HEIGHT/2 + 105, WINDOW_WIDTH/2 - 35, WINDOW_HEIGHT), "SDL_RenderDrawLine", window);
   Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 + 35, WINDOW_HEIGHT/2 + 105, WINDOW_WIDTH/2 + 35, WINDOW_HEIGHT), "SDL_RenderDrawLine", window);
+
+  /* render traffic lights */
+  SDL_Texture *traffic_light_laneA = IMG_LoadTexture(renderer, "traffic-light-laneA-go.png");
+  if (!traffic_light_laneA) {
+    printf("Failed to load texture\n");
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_Quit();
+    exit(1);
+  }
+  SDL_Rect traffic_light_laneA_destination;
+  traffic_light_laneA_destination.x = WINDOW_WIDTH/2 + 12;
+  traffic_light_laneA_destination.y = WINDOW_HEIGHT/2 -105;
+  traffic_light_laneA_destination.w = 46;
+  traffic_light_laneA_destination.h = 72;
+  SDL_RenderCopy(renderer, traffic_light_laneA, NULL, &traffic_light_laneA_destination);
+
+  SDL_Texture *traffic_light_laneB = IMG_LoadTexture(renderer, "traffic-light-laneB-go.png");
+  if (!traffic_light_laneB) {
+    printf("Failed to load texture\n");
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_Quit();
+    exit(1);
+  }
+  SDL_Rect traffic_light_laneB_destination;
+  traffic_light_laneB_destination.x = 100;
+  traffic_light_laneB_destination.y = 20;
+  traffic_light_laneB_destination.w = 46;
+  traffic_light_laneB_destination.h = 72;
+  SDL_RenderCopy(renderer, traffic_light_laneB, NULL, &traffic_light_laneB_destination);
+
+  SDL_Texture *traffic_light_laneC = IMG_LoadTexture(renderer, "traffic-light-laneC-go.png");
+  if (!traffic_light_laneC) {
+    printf("Failed to load texture\n");
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_Quit();
+    exit(1);
+  }
+  SDL_Rect traffic_light_laneC_destination;
+  traffic_light_laneC_destination.x = 200;
+  traffic_light_laneC_destination.y = 20;
+  traffic_light_laneC_destination.w = 46;
+  traffic_light_laneC_destination.h = 72;
+  SDL_RenderCopy(renderer, traffic_light_laneC, NULL, &traffic_light_laneC_destination);
+
+  SDL_Texture *traffic_light_laneD = IMG_LoadTexture(renderer, "traffic-light-laneD-go.png");
+  if (!traffic_light_laneD) {
+    printf("Failed to load texture\n");
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_Quit();
+    exit(1);
+  }
+  SDL_Rect traffic_light_laneD_destination;
+  traffic_light_laneD_destination.x = 300;
+  traffic_light_laneD_destination.y = 20;
+  traffic_light_laneD_destination.w = 46;
+  traffic_light_laneD_destination.h = 72;
+  SDL_RenderCopy(renderer, traffic_light_laneD, NULL, &traffic_light_laneD_destination);
 
   /* update the screen with the latest renderings */
   SDL_RenderPresent(renderer);
