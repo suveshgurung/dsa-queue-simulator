@@ -1,6 +1,8 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include <stdio.h>
+
 /* defines */
 
 /* for now queue size is 5 */
@@ -17,7 +19,13 @@ enum Vehicle_Direction {
 
 /* structures */
 
-/* defines which direction the vehicle is going. */
+/* defines which direction the vehicle is going.
+ * the values can be one of the following:
+ * D_UP
+ * D_DOWN
+ * D_LEFT
+ * D_RIGHT
+ */
 typedef struct Vehicle {
   int direction;
 } Vehicle;

@@ -1,5 +1,4 @@
 #include "queue.h"
-#include <cstdio>
 
 void Init_Vehicle_Queue(Vehicle_Queue *q) {
   q->front = -1;
@@ -34,11 +33,19 @@ void Enqueue_Vehicle(Vehicle_Queue *q, Vehicle v) {
 
   q->rear = (q->rear + 1) % MAX_VEHICLE_QUEUE_SIZE;
   q->vehicles[q->rear] = v;
+  /* size goes from 1 to 5 */
+  q->size = (q->size + 1) % (MAX_VEHICLE_QUEUE_SIZE + 1);
 }
 
 Vehicle Dequeue_Vehicle(Vehicle_Queue *q) {
   if (Is_Vehicle_Queue_Empty(q)) {
     fprintf(stderr, "The vehicle queue is empty.\n");
+
+    /* indication of error */
+    Vehicle error;
+    error.direction = -1;
+
+    return error;
   }
 
   q->front = (q->front + 1) % MAX_VEHICLE_QUEUE_SIZE;
@@ -46,8 +53,7 @@ Vehicle Dequeue_Vehicle(Vehicle_Queue *q) {
 
   /* queue is empty now */
   if (q->front == q->rear) {
-    q->front = -1;
-    q->rear = -1;
+    Init_Vehicle_Queue(q);
   }
 
   return vehicle;
