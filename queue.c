@@ -1,5 +1,7 @@
 #include "queue.h"
 
+
+/* vehicle queue */
 void Init_Vehicle_Queue(Vehicle_Queue *q) {
   q->front = -1;
   q->rear = -1;
@@ -57,4 +59,66 @@ Vehicle Dequeue_Vehicle(Vehicle_Queue *q) {
   }
 
   return vehicle;
+}
+
+
+/* lane queue */
+void Init_Lane_Queue(Lane_Queue *lq) {
+  lq->size = 0;
+}
+
+int Is_Lane_Queue_Empty(Lane_Queue *lq) {
+  if (lq->size == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+int Is_Lane_Queue_Full(Lane_Queue *lq) {
+  if (lq->size == MAX_LANE_QUEUE_SIZE) {
+    return 1;
+  }
+  return 0;
+}
+
+void Enqueue_Lane(Lane_Queue *lq, Lane_Data ld) {
+  if (Is_Lane_Queue_Full(lq)) {
+    fprintf(stderr, "The lane queue is full!\n");
+    return;
+  }
+  
+  int i;
+  for (i = lq->size - 1; i >= 0; i--) {
+    if (lq->lanes[i].priority > ld.priority) {
+      lq->lanes[i + 1] = lq->lanes[i];
+    }
+    else {
+      break;
+    }
+  }
+  lq->lanes[i + 1].lane = ld.lane;
+  lq->lanes[i + 1].no_of_vehicle = ld.no_of_vehicle;
+  lq->lanes[i + 1].priority = ld.priority;
+
+  lq->size++;
+}
+
+Lane_Data Dequeue_Lane(Lane_Queue *lq) {
+  if (Is_Lane_Queue_Empty(lq)) {
+    fprintf(stderr, "The lane queue is empty!\n");
+
+    Lane_Data error;
+    /* -1 to indicate error. */
+    error.lane = -1;
+
+    return error;
+  }
+
+  Lane_Data dequeued_element = lq->lanes[0];
+  for (int i = 1; i < lq->size; i++) {
+    lq->lanes[i - 1] = lq->lanes[i];
+  }
+  lq->size--;
+
+  return dequeued_element;
 }
