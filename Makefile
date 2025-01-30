@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -ggdb
 
-SRC = simulator.c
-OBJ = simulator.o
+SRC = simulator.c queue.c
+OBJ = simulator.o queue.o
 TARGET = simulator
 
 .PHONY: all clean
@@ -12,8 +12,8 @@ all: $(TARGET)
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lSDL2 -lSDL2_image
 
-$(OBJ): $(SRC)
-	$(CC) $(CFLAGS) -c $(SRC) -o $(OBJ)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -rf $(TARGET) $(OBJ)
