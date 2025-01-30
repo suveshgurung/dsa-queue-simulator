@@ -1,5 +1,6 @@
 /* TODO : see how to render traffic lights */
 #include "simulator.h"
+#include "queue.h"
 
 int main() {
   if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
@@ -25,8 +26,37 @@ int main() {
   Render_Roads_Traffic_Lights(renderer, window);
 
   bool running = true;
+  SDL_Event event;
+
+  /* vehicle queue for three lanes of each of the four roads. 
+   * vehicle_queue[0][0] -> R_A L_A1
+   * vehicle_queue[0][1] -> R_A L_A2
+   * vehicle_queue[0][2] -> R_A L_A3
+   *
+   * vehicle_queue[1][0] -> R_B L_B1
+   * vehicle_queue[1][1] -> R_B L_B2
+   * vehicle_queue[1][2] -> R_B L_B3
+   *
+   * vehicle_queue[2][0] -> R_C L_C1
+   * vehicle_queue[2][1] -> R_C L_C2
+   * vehicle_queue[2][2] -> R_C L_C3
+   *
+   * vehicle_queue[3][0] -> R_D L_D1
+   * vehicle_queue[3][1] -> R_D L_D2
+   * vehicle_queue[3][2] -> R_D L_D3
+   */
+  Vehicle_Queue vehicle_queue[4][3];
+  Lane_Queue lane_queue;
+
+  /* initialize the queues. */
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 3; j++) {
+      Init_Vehicle_Queue(&vehicle_queue[i][j]);
+    }
+  }
+  Init_Lane_Queue(&lane_queue);
+
   while (running) {
-    SDL_Event event;
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
         case SDL_QUIT:

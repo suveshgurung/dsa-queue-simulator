@@ -7,7 +7,7 @@ void Init_Vehicle_Queue(Vehicle_Queue *q) {
   q->rear = -1;
   q->size = 0;
 
-  /* initially the direction where the vehicle is going is not defined. So we set it to -1 */
+  /* initially the direction where the vehicle is going and the lane it is on is not defined. So we set it to -1 */
   for (int i = 0; i < MAX_VEHICLE_QUEUE_SIZE; i++) {
     q->vehicles[i].direction = -1;
   }

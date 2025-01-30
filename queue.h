@@ -5,7 +5,7 @@
 
 /* defines */
 
-/* for now queue size is 5 */
+/* for now each lane can accomodate 5 vehicles */
 #define MAX_VEHICLE_QUEUE_SIZE 5
 /* there are 4 lanes for traffic conditions */
 #define MAX_LANE_QUEUE_SIZE 4
@@ -18,11 +18,26 @@ enum Vehicle_Direction {
   D_RIGHT
 };
 
+enum Roads {
+  R_A = 0,
+  R_B,
+  R_C,
+  R_D
+};
+
 enum Lanes {
-  L_A2 = 0,
+  L_A1 = 0,
+  L_A2,
+  L_A3,
+  L_B1,
   L_B2,
+  L_B3,
+  L_C1,
   L_C2,
-  L_D2
+  L_C3,
+  L_D1,
+  L_D2,
+  L_D3
 };
 
 
