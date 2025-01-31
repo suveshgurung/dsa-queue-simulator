@@ -1,19 +1,26 @@
 CC = gcc
 CFLAGS = -Wall -ggdb
 
-SRC = simulator.c queue.c
-OBJ = simulator.o queue.o
-TARGET = simulator
+SIM_SRC = simulator.c queue.c
+SIM_OBJ = $(SIM_SRC:.c=.o)
+SIM_TARGET = simulator
+
+GEN_SRC = traffic-generator.c
+GEN_OBJ = traffic-generator.o
+GEN_TARGET = traffic-generator
 
 .PHONY: all clean
 
-all: $(TARGET)
+all: $(SIM_TARGET) $(GEN_TARGET)
 
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lSDL2 -lSDL2_image
+$(SIM_TARGET): $(SIM_OBJ)
+	$(CC) $(CFLAGS) -o $(SIM_TARGET) $(SIM_OBJ) -lSDL2 -lSDL2_image
+
+$(GEN_TARGET): $(GEN_OBJ)
+	$(CC) $(CFLAGS) -o $(GEN_TARGET) $(GEN_OBJ) -lm
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(TARGET) $(OBJ)
+	rm -rf $(SIM_TARGET) $(SIM_OBJ) $(GEN_TARGET) $(GEN_OBJ)
