@@ -5,8 +5,8 @@
 
 /* defines */
 
-/* for now each lane can accomodate 5 vehicles */
-#define MAX_VEHICLE_QUEUE_SIZE 5
+/* for now each lane can accomodate 10 vehicles */
+#define MAX_VEHICLE_QUEUE_SIZE 10
 /* there are 4 lanes for traffic conditions */
 #define MAX_LANE_QUEUE_SIZE 4
 
