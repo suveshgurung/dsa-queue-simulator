@@ -1,6 +1,15 @@
 /* TODO : see how to render traffic lights */
 #include "simulator.h"
 #include "queue.h"
+#include "socket.h"
+#include <stdlib.h>
+#include <stdbool.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_error.h>
+#include <SDL2/SDL_log.h>
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_image.h>
+#include <sys/socket.h>
 
 int main() {
   if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
@@ -24,6 +33,23 @@ int main() {
   }
 
   Render_Roads_Traffic_Lights(renderer, window);
+
+  /* open the socket for listening for generated traffic. */
+  int socket_FD = socket(AF_INET, SOCK_STREAM, 0);
+  if (socket_FD == -1) {
+    perror("socket");
+    return -1;
+  }
+
+  struct sockaddr_in address = Create_IPv4_Socket_Address("127.0.0.1", 6000);
+  if (bind(socket_FD, (struct sockaddr *)&address, sizeof(address)) == -1) {
+    perror("bind");
+    return -1;
+  }
+  if (listen(socket_FD, 1) == -1) {
+    perror("listen");
+    return -1;
+  }
 
   bool running = true;
   SDL_Event event;

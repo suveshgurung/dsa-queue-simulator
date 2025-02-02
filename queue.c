@@ -1,5 +1,5 @@
 #include "queue.h"
-
+#include <stdio.h>
 
 /* vehicle queue */
 void Init_Vehicle_Queue(Vehicle_Queue *q) {

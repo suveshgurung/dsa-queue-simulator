@@ -1,12 +1,12 @@
 CC = gcc
 CFLAGS = -Wall -ggdb
 
-SIM_SRC = simulator.c queue.c
+SIM_SRC = simulator.c queue.c socket.c
 SIM_OBJ = $(SIM_SRC:.c=.o)
 SIM_TARGET = simulator
 
-GEN_SRC = traffic-generator.c
-GEN_OBJ = traffic-generator.o
+GEN_SRC = traffic-generator.c socket.c
+GEN_OBJ = $(GEN_SRC:.c=.o)
 GEN_TARGET = traffic-generator
 
 .PHONY: all clean

@@ -1,8 +1,6 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-#include <stdio.h>
-
 /* defines */
 
 /* for now each lane can accomodate 10 vehicles */
