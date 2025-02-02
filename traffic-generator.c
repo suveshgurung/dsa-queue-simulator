@@ -18,13 +18,21 @@ void Generate_Vehicles() {
   int vehicle_max = 3;
 
   /* lanes are from 1 to 4 
+   * 0 -> AL1
    * 1 -> AL2
-   * 2 -> BL2
-   * 3 -> CL2
-   * 4 -> DL2
+   * 2 -> AL3
+   * 3 -> BL1
+   * 4 -> BL2
+   * 5 -> BL3
+   * 6 -> CL1
+   * 7 -> CL2
+   * 8 -> CL3
+   * 9 -> DL1
+   * 10 -> DL2
+   * 11 -> DL3
    */
-  int lane_min = 1;
-  int lane_max = 4;
+  int lane_min = 0;
+  int lane_max = 11;
 
   double r = (double)rand() / RAND_MAX;  // Generate a random float between 0 and 1
   int random_vehicle_number = vehicle_min + (int)(pow(r, 2) * (vehicle_max - vehicle_min));
