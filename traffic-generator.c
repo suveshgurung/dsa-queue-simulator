@@ -6,8 +6,10 @@
 #include <time.h>
 #include <math.h>
 #include <unistd.h>
+#include <signal.h>
 
 int socket_FD;
+int is_running = 1;
 
 int main() {
   /* seed rand() with current time in seconds */
@@ -25,10 +27,14 @@ int main() {
     return -1;
   }
 
-  while (1) {
+  signal(SIGINT, Signal_Handler);
+
+  while (is_running) {
     Generate_Vehicles();
     sleep(5);
   }
+
+  close(socket_FD);
 
   return 0;
 }
@@ -63,13 +69,18 @@ void Generate_Vehicles() {
 }
 
 void Serialize_And_Send_Data(int vehicle_number, int lane_number) {
-  char buffer[19];
+  char buffer[MAX_SOCKET_BUFFER_SIZE];
 
-  snprintf(buffer, 19, "LANE:%d, VEHICLE:%d", lane_number, vehicle_number);
+  snprintf(buffer, MAX_SOCKET_BUFFER_SIZE, "LANE:%d, VEHICLE:%d", lane_number, vehicle_number);
 
   printf("%s\n", buffer);
-  if (send(socket_FD, buffer, strlen(buffer), 0) == -1) {
+  /* strlen(buffer) + 1 to send the null byte as well */
+  if (send(socket_FD, buffer, strlen(buffer) + 1, 0) == -1) {
     perror("send");
     exit(-1);
   }
+}
+
+void Signal_Handler(int signal) {
+  is_running = 0;
 }

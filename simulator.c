@@ -3,15 +3,21 @@
 #include "queue.h"
 #include "socket.h"
 #include <stdlib.h>
-#include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_log.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_image.h>
 #include <sys/socket.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <signal.h>
+
+bool running = true;
 
 int main() {
+  signal(SIGINT, Signal_Handler);
+
   if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
     SDL_Log("SDL_Init error: %s", SDL_GetError());
     return 1;
@@ -51,7 +57,13 @@ int main() {
     return -1;
   }
 
-  bool running = true;
+  /* start a new thread which paralelly listens for data from traffic-generator program */
+  pthread_t thread_id;
+  if (pthread_create(&thread_id, NULL, &Receive_From_Generator, (void *)&socket_FD) != 0) {
+    fprintf(stderr, "Error in pthread_create\n");
+    return -1;
+  }
+
   SDL_Event event;
 
   /* vehicle queue for three lanes of each of the four roads. 
@@ -95,6 +107,7 @@ int main() {
   SDL_DestroyWindow(window);
   IMG_Quit();
   SDL_Quit();
+  close(socket_FD);
 
   return 0;
 }
@@ -255,4 +268,39 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
 
   /* update the screen with the latest renderings */
   SDL_RenderPresent(renderer);
+}
+
+
+void *Receive_From_Generator(void *arg) {
+  int socket_FD = *((int *)arg);
+
+  struct sockaddr_in generator_socket_address;
+  socklen_t generator_socket_address_length = sizeof(generator_socket_address);
+
+  int generator_socket_FD = accept(socket_FD, (struct sockaddr *)&generator_socket_FD, &generator_socket_address_length);
+  if (generator_socket_FD == -1) {
+    perror("accpet");
+    exit(-1);
+  }
+
+  ssize_t bytes_received;
+  char buffer[MAX_SOCKET_BUFFER_SIZE];
+  while (running) {
+    bytes_received = recv(generator_socket_FD, buffer, MAX_SOCKET_BUFFER_SIZE, 0);
+    if (bytes_received == -1) {
+      perror("recv");
+      exit(-1);
+    }
+    if (bytes_received == 0) {
+      /* generator side program is terminated */
+      break;
+    }
+    printf("%s\n", buffer);
+  }
+
+  return NULL;
+}
+
+void Signal_Handler(int signal) {
+  running = false;
 }
