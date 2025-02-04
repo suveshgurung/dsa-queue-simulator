@@ -13,7 +13,9 @@
 #include <unistd.h>
 #include <signal.h>
 
-bool running = true;
+int running = 1;
+int generator_requesting_connection = 0;
+int generator_socket_FD;
 
 int main() {
   signal(SIGINT, Signal_Handler);
@@ -57,10 +59,10 @@ int main() {
     return -1;
   }
 
-  /* start a new thread which paralelly listens for data from traffic-generator program */
-  pthread_t thread_id;
-  if (pthread_create(&thread_id, NULL, &Receive_From_Generator, (void *)&socket_FD) != 0) {
-    fprintf(stderr, "Error in pthread_create\n");
+  /* start a new thread which accepts for connection from generator */
+  pthread_t accept_connection_from_generator_thread_id;
+  if (pthread_create(&accept_connection_from_generator_thread_id, NULL, &Accept_Connection_From_Generator, (void *)&socket_FD) != 0) {
+    fprintf(stderr, "Error in pthread_create for accept_connection_from_generator_thread\n");
     return -1;
   }
 
@@ -98,9 +100,19 @@ int main() {
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
         case SDL_QUIT:
-          running = false;
+          running = 0;
           break;
       }
+    }
+
+    if (generator_requesting_connection) {
+      /* start a new thread which paralelly listens for data from traffic-generator program */
+      pthread_t listen_from_generator_thread_id;
+      if (pthread_create(&listen_from_generator_thread_id, NULL, &Receive_From_Generator, (void *)&socket_FD) != 0) {
+        fprintf(stderr, "Error in pthread_create\n");
+        return -1;
+      }
+      generator_requesting_connection = 0;
     }
   }
 
@@ -270,22 +282,31 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   SDL_RenderPresent(renderer);
 }
 
-
-void *Receive_From_Generator(void *arg) {
+void *Accept_Connection_From_Generator(void *arg) {
   int socket_FD = *((int *)arg);
 
   struct sockaddr_in generator_socket_address;
   socklen_t generator_socket_address_length = sizeof(generator_socket_address);
 
-  int generator_socket_FD = accept(socket_FD, (struct sockaddr *)&generator_socket_FD, &generator_socket_address_length);
-  if (generator_socket_FD == -1) {
-    perror("accpet");
-    exit(-1);
+  while (running) {
+    generator_socket_FD = accept(socket_FD, (struct sockaddr *)&generator_socket_FD, &generator_socket_address_length);
+    if (generator_socket_FD == -1) {
+      perror("accpet");
+      exit(-1);
+    }
+    else {
+      generator_requesting_connection = 1;
+    }
   }
 
+  return NULL;
+}
+
+void *Receive_From_Generator(void *arg) {
+  int is_generator_connected = 1;
   ssize_t bytes_received;
   char buffer[MAX_SOCKET_BUFFER_SIZE];
-  while (running) {
+  while (is_generator_connected) {
     bytes_received = recv(generator_socket_FD, buffer, MAX_SOCKET_BUFFER_SIZE, 0);
     if (bytes_received == -1) {
       perror("recv");
@@ -293,14 +314,17 @@ void *Receive_From_Generator(void *arg) {
     }
     if (bytes_received == 0) {
       /* generator side program is terminated */
-      break;
+      is_generator_connected = 0;
     }
-    printf("%s\n", buffer);
+
+    if (is_generator_connected) {
+      printf("%s\n", buffer);
+    }
   }
 
   return NULL;
 }
 
 void Signal_Handler(int signal) {
-  running = false;
+  running = 0;
 }
