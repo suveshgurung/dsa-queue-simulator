@@ -1,8 +1,8 @@
 /* TODO : see how to render traffic lights */
 #include "simulator.h"
 #include "queue.h"
-#include "socket.h"
 #include <stdlib.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_log.h>
@@ -12,13 +12,17 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 int running = 1;
 int generator_requesting_connection = 0;
 int generator_socket_FD;
+int received_from_generator = 0;
+char buffer[MAX_SOCKET_BUFFER_SIZE];
 
 int main() {
   signal(SIGINT, Signal_Handler);
+  srand(time(NULL));
 
   if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
     SDL_Log("SDL_Init error: %s", SDL_GetError());
@@ -69,30 +73,28 @@ int main() {
   SDL_Event event;
 
   /* vehicle queue for three lanes of each of the four roads. 
-   * vehicle_queue[0][0] -> R_A L_A1
-   * vehicle_queue[0][1] -> R_A L_A2
-   * vehicle_queue[0][2] -> R_A L_A3
+   * vehicle_queue[0] -> R_A L_A1
+   * vehicle_queue[1] -> R_A L_A2
+   * vehicle_queue[2] -> R_A L_A3
    *
-   * vehicle_queue[1][0] -> R_B L_B1
-   * vehicle_queue[1][1] -> R_B L_B2
-   * vehicle_queue[1][2] -> R_B L_B3
+   * vehicle_queue[3] -> R_B L_B1
+   * vehicle_queue[4] -> R_B L_B2
+   * vehicle_queue[5] -> R_B L_B3
    *
-   * vehicle_queue[2][0] -> R_C L_C1
-   * vehicle_queue[2][1] -> R_C L_C2
-   * vehicle_queue[2][2] -> R_C L_C3
+   * vehicle_queue[6] -> R_C L_C1
+   * vehicle_queue[7] -> R_C L_C2
+   * vehicle_queue[8] -> R_C L_C3
    *
-   * vehicle_queue[3][0] -> R_D L_D1
-   * vehicle_queue[3][1] -> R_D L_D2
-   * vehicle_queue[3][2] -> R_D L_D3
+   * vehicle_queue[9] -> R_D L_D1
+   * vehicle_queue[10] -> R_D L_D2
+   * vehicle_queue[11] -> R_D L_D3
    */
-  Vehicle_Queue vehicle_queue[4][3];
+  Vehicle_Queue vehicle_queue[12];
   Lane_Queue lane_queue;
 
   /* initialize the queues. */
-  for (int i = 0; i < 4; i++) {
-    for (int j = 0; j < 3; j++) {
-      Init_Vehicle_Queue(&vehicle_queue[i][j]);
-    }
+  for (int i = 0; i < 12; i++) {
+    Init_Vehicle_Queue(&vehicle_queue[i]);
   }
   Init_Lane_Queue(&lane_queue);
 
@@ -105,14 +107,32 @@ int main() {
       }
     }
 
+    /* check if generator side is trying to connect */
     if (generator_requesting_connection) {
       /* start a new thread which paralelly listens for data from traffic-generator program */
       pthread_t listen_from_generator_thread_id;
-      if (pthread_create(&listen_from_generator_thread_id, NULL, &Receive_From_Generator, (void *)&socket_FD) != 0) {
-        fprintf(stderr, "Error in pthread_create\n");
+      if (pthread_create(&listen_from_generator_thread_id, NULL, &Receive_From_Generator, NULL) != 0) {
+        fprintf(stderr, "pthread_create: listen_from_generator_thread\n");
         return -1;
       }
       generator_requesting_connection = 0;
+    }
+
+    /* check if data is received from the generator */
+    if (received_from_generator) {
+      Parser_Data parser_data = {
+        .vehicle_queue = vehicle_queue,
+        .lane_queue = &lane_queue
+      };
+      memcpy(parser_data.data_buffer, buffer, strlen(buffer) + 1);
+
+      /* start a new thread which parses and renders the received data */
+      pthread_t parse_received_data_thread_id;
+      if (pthread_create(&parse_received_data_thread_id, NULL, Parse_Received_Data, (void *)&parser_data) != 0) {
+        fprintf(stderr, "pthread_create: parse_received_data_thread\n");
+        return -1;
+      }
+      received_from_generator = 0;
     }
   }
 
@@ -218,7 +238,7 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   Error_Checker(SDL_RenderDrawLine(renderer, WINDOW_WIDTH/2 + 35, WINDOW_HEIGHT/2 + 105, WINDOW_WIDTH/2 + 35, WINDOW_HEIGHT), "SDL_RenderDrawLine", window);
 
   /* render traffic lights */
-  SDL_Texture *traffic_light_laneA = IMG_LoadTexture(renderer, "images/traffic-light-laneA-go.png");
+  /* SDL_Texture *traffic_light_laneA = IMG_LoadTexture(renderer, "images/traffic-light-laneA-go.png");
   if (!traffic_light_laneA) {
     printf("Failed to load texture\n");
     SDL_DestroyWindow(window);
@@ -277,6 +297,7 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   traffic_light_laneD_destination.w = 46;
   traffic_light_laneD_destination.h = 72;
   SDL_RenderCopy(renderer, traffic_light_laneD, NULL, &traffic_light_laneD_destination);
+  */
 
   /* update the screen with the latest renderings */
   SDL_RenderPresent(renderer);
@@ -305,7 +326,6 @@ void *Accept_Connection_From_Generator(void *arg) {
 void *Receive_From_Generator(void *arg) {
   int is_generator_connected = 1;
   ssize_t bytes_received;
-  char buffer[MAX_SOCKET_BUFFER_SIZE];
   while (is_generator_connected) {
     bytes_received = recv(generator_socket_FD, buffer, MAX_SOCKET_BUFFER_SIZE, 0);
     if (bytes_received == -1) {
@@ -318,11 +338,99 @@ void *Receive_From_Generator(void *arg) {
     }
 
     if (is_generator_connected) {
+      received_from_generator = 1;
       printf("%s\n", buffer);
     }
   }
 
   return NULL;
+}
+
+void *Parse_Received_Data(void *arg) {
+  Parser_Data *parser_data = (Parser_Data *)arg;
+
+  int first_lane_digit = parser_data->data_buffer[5] - '0';
+  int second_lane_digit = -1;
+  int lane;
+  int number_of_vehicles;
+  /* lane is either 10 or 11 if parser_data->data_buffer[6] != ',' */
+  if (parser_data->data_buffer[6] != ',') {
+    second_lane_digit = parser_data->data_buffer[6] - '0';
+    number_of_vehicles = parser_data->data_buffer[17] - '0';
+  }
+  else {
+    number_of_vehicles = parser_data->data_buffer[16] - '0';
+  }
+
+  if (second_lane_digit != -1) {
+    lane = (first_lane_digit * 10) + second_lane_digit;
+  }
+  else {
+    lane = first_lane_digit;
+  }
+
+  /* enqueue number_of_vehicles of vehicles */
+  for (int i = 0; i < number_of_vehicles; i++) {
+    Vehicle vehicle;
+    Determine_Vehicle_Direction(&vehicle, lane);
+    Enqueue_Vehicle(&parser_data->vehicle_queue[lane], vehicle);
+  }
+
+  return NULL;
+}
+
+void Determine_Vehicle_Direction(Vehicle *vehicle, int lane) {
+  /* 1 and 2 are the determiner 
+   * 1 -> defines the vertical direction
+   * 2 -> defines the horizontal direction
+   */
+  int random_direction_determiner = rand() % (2 - 1 + 1) + 1;
+  switch (lane) {
+    case 1:         /* AL2 */
+      if (random_direction_determiner == 1) {
+        vehicle->direction = D_DOWN;
+      }
+      else {
+        vehicle->direction = D_LEFT;
+      }
+      break;
+    case 2:         /* AL3 */
+      vehicle->direction = D_RIGHT;
+      break;
+    case 4:         /* BL2 */
+      if (random_direction_determiner == 1) {
+        vehicle->direction = D_UP;
+      }
+      else {
+        vehicle->direction = D_LEFT;
+      }
+      break;
+    case 5:         /* BL3 */
+      vehicle->direction = D_DOWN;
+      break;
+    case 7:         /* CL2 */
+      if (random_direction_determiner == 1) {
+        vehicle->direction = D_UP;
+      }
+      else {
+        vehicle->direction = D_RIGHT;
+      }
+      break;
+    case 8:         /* CL3 */
+      vehicle->direction = D_LEFT;
+      break;
+    case 10:         /* DL2 */
+      if (random_direction_determiner == 1) {
+        vehicle->direction = D_DOWN;
+      }
+      else {
+        vehicle->direction = D_RIGHT;
+      }
+      break;
+    case 11:         /* DL3 */
+      vehicle->direction = D_UP;
+      break;
+  }
 }
 
 void Signal_Handler(int signal) {

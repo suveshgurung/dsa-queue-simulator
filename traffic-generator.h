@@ -3,6 +3,7 @@
 
 extern int socket_FD;
 extern int is_running;
+extern int valid_random_lanes[];
 
 /* function prototypes */
 void Generate_Vehicles();

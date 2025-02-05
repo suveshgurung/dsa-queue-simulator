@@ -10,9 +10,12 @@
 
 int socket_FD;
 int is_running = 1;
+/* lane AL1->0, BL1->3, CL1->6, DL1->9 are incoming lanes only */
+int valid_random_lanes[] = {1, 2, 4, 5, 7, 8, 10, 11};
 
 int main() {
   /* seed rand() with current time in seconds */
+  signal(SIGINT, Signal_Handler);
   srand(time(NULL));
 
   socket_FD = socket(AF_INET, SOCK_STREAM, 0);
@@ -27,11 +30,9 @@ int main() {
     return -1;
   }
 
-  signal(SIGINT, Signal_Handler);
-
   while (is_running) {
     Generate_Vehicles();
-    sleep(5);
+    sleep(1);
   }
 
   close(socket_FD);
@@ -44,28 +45,15 @@ void Generate_Vehicles() {
   int vehicle_min = 1;
   int vehicle_max = 3;
 
-  /* lanes are from 0 to 11
-   * 0 -> AL1
-   * 1 -> AL2
-   * 2 -> AL3
-   * 3 -> BL1
-   * 4 -> BL2
-   * 5 -> BL3
-   * 6 -> CL1
-   * 7 -> CL2
-   * 8 -> CL3
-   * 9 -> DL1
-   * 10 -> DL2
-   * 11 -> DL3
-   */
+  /* index of lanes are from 0 to 7 and the corresponding lanes are in valid_random_lanes[] */
   int lane_min = 0;
-  int lane_max = 11;
+  int lane_max = 7;
 
   double r = (double)rand() / RAND_MAX;  // Generate a random float between 0 and 1
   int random_vehicle_number = vehicle_min + (int)(pow(r, 2) * (vehicle_max - vehicle_min));
-  int random_lane_number = rand() % (lane_max - lane_min + 1) + lane_min;
+  int random_lane_index = rand() % (lane_max - lane_min + 1) + lane_min;
 
-  Serialize_And_Send_Data(random_vehicle_number, random_lane_number);
+  Serialize_And_Send_Data(random_vehicle_number, valid_random_lanes[random_lane_index]);
 }
 
 void Serialize_And_Send_Data(int vehicle_number, int lane_number) {
