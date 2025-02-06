@@ -386,7 +386,7 @@ void Determine_Vehicle_Direction(Vehicle *vehicle, int lane) {
    */
   int random_direction_determiner = rand() % (2 - 1 + 1) + 1;
   switch (lane) {
-    case 1:         /* AL2 */
+    case L_A2:         /* AL2 */
       if (random_direction_determiner == 1) {
         vehicle->direction = D_DOWN;
       }
@@ -394,10 +394,10 @@ void Determine_Vehicle_Direction(Vehicle *vehicle, int lane) {
         vehicle->direction = D_LEFT;
       }
       break;
-    case 2:         /* AL3 */
+    case L_A3:         /* AL3 */
       vehicle->direction = D_RIGHT;
       break;
-    case 4:         /* BL2 */
+    case L_B2:         /* BL2 */
       if (random_direction_determiner == 1) {
         vehicle->direction = D_UP;
       }
@@ -405,10 +405,10 @@ void Determine_Vehicle_Direction(Vehicle *vehicle, int lane) {
         vehicle->direction = D_LEFT;
       }
       break;
-    case 5:         /* BL3 */
+    case L_B3:         /* BL3 */
       vehicle->direction = D_DOWN;
       break;
-    case 7:         /* CL2 */
+    case L_C2:         /* CL2 */
       if (random_direction_determiner == 1) {
         vehicle->direction = D_UP;
       }
@@ -416,10 +416,10 @@ void Determine_Vehicle_Direction(Vehicle *vehicle, int lane) {
         vehicle->direction = D_RIGHT;
       }
       break;
-    case 8:         /* CL3 */
+    case L_C3:         /* CL3 */
       vehicle->direction = D_LEFT;
       break;
-    case 10:         /* DL2 */
+    case L_D2:         /* DL2 */
       if (random_direction_determiner == 1) {
         vehicle->direction = D_DOWN;
       }
@@ -427,7 +427,7 @@ void Determine_Vehicle_Direction(Vehicle *vehicle, int lane) {
         vehicle->direction = D_RIGHT;
       }
       break;
-    case 11:         /* DL3 */
+    case L_D3:         /* DL3 */
       vehicle->direction = D_UP;
       break;
   }
