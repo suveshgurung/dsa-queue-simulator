@@ -34,6 +34,7 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *, SDL_Window *);
 void *Accept_Connection_From_Generator(void *);
 void *Receive_From_Generator(void *);
 void *Parse_Received_Data(void *);
+void *Render_Vehicles(void *);
 
 void Determine_Vehicle_Direction(Vehicle *, int);
 

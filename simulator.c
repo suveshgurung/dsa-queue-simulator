@@ -63,10 +63,18 @@ int main() {
     return -1;
   }
 
-  /* start a new thread which accepts for connection from generator */
   pthread_t accept_connection_from_generator_thread_id;
+  pthread_t render_vehicles_thread_id[12];              /* for 12 lanes */
+  pthread_t listen_from_generator_thread_id;
+  pthread_t parse_received_data_thread_id;
+
+  /* start a new thread which accepts for connection from generator */
   if (pthread_create(&accept_connection_from_generator_thread_id, NULL, &Accept_Connection_From_Generator, (void *)&socket_FD) != 0) {
     fprintf(stderr, "Error in pthread_create for accept_connection_from_generator_thread\n");
+    return -1;
+  }
+  if (pthread_detach(accept_connection_from_generator_thread_id) != 0) {
+    fprintf(stderr, "pthread_detach: accept_connection_from_generator_thread\n");
     return -1;
   }
 
@@ -98,6 +106,18 @@ int main() {
   }
   Init_Lane_Queue(&lane_queue);
 
+  /* make threads for each lane rendering */
+  {
+    int lanes[12];
+    for (int i = 0; i < 12; i++) {
+      lanes[i] = i;
+      if (pthread_create(&render_vehicles_thread_id[i], NULL, &Render_Vehicles, (void *)&lanes[i]) != 0) {
+        fprintf(stderr, "Error in pthread_create for render_vehicles_thread\n");
+        return -1;
+      }
+    }
+  }
+
   while (running) {
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
@@ -110,9 +130,12 @@ int main() {
     /* check if generator side is trying to connect */
     if (generator_requesting_connection) {
       /* start a new thread which paralelly listens for data from traffic-generator program */
-      pthread_t listen_from_generator_thread_id;
       if (pthread_create(&listen_from_generator_thread_id, NULL, &Receive_From_Generator, NULL) != 0) {
         fprintf(stderr, "pthread_create: listen_from_generator_thread\n");
+        return -1;
+      }
+      if (pthread_detach(listen_from_generator_thread_id) != 0) {
+        fprintf(stderr, "pthread_detach: listen_from_generator_thread\n");
         return -1;
       }
       generator_requesting_connection = 0;
@@ -127,9 +150,12 @@ int main() {
       memcpy(parser_data.data_buffer, buffer, strlen(buffer) + 1);
 
       /* start a new thread which parses and renders the received data */
-      pthread_t parse_received_data_thread_id;
       if (pthread_create(&parse_received_data_thread_id, NULL, Parse_Received_Data, (void *)&parser_data) != 0) {
         fprintf(stderr, "pthread_create: parse_received_data_thread\n");
+        return -1;
+      }
+      if (pthread_detach(parse_received_data_thread_id) != 0) {
+        fprintf(stderr, "pthread_detach: parse_received_data_thread\n");
         return -1;
       }
       received_from_generator = 0;
@@ -374,6 +400,17 @@ void *Parse_Received_Data(void *arg) {
     Vehicle vehicle;
     Determine_Vehicle_Direction(&vehicle, lane);
     Enqueue_Vehicle(&parser_data->vehicle_queue[lane], vehicle);
+  }
+
+  return NULL;
+}
+
+void *Render_Vehicles(void *arg) {
+  int lane = *((int *)arg);
+  
+  switch (lane) {
+    case L_A2:
+      break;
   }
 
   return NULL;
