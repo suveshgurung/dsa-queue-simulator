@@ -50,6 +50,9 @@ enum Lanes {
  */
 typedef struct Vehicle {
   int direction;
+  /* position of the vehicle in the road */
+  int x;
+  int y;
 } Vehicle;
 
 /* NOTE: we take the vehicle queue as a circular queue */
