@@ -108,11 +108,19 @@ int main() {
 
   /* make threads for each lane rendering */
   {
-    int lanes[12];
+    Render_Vehicles_Thread_Data render_vehicles_data[12];
     for (int i = 0; i < 12; i++) {
-      lanes[i] = i;
-      if (pthread_create(&render_vehicles_thread_id[i], NULL, &Render_Vehicles, (void *)&lanes[i]) != 0) {
+      render_vehicles_data[i].vehicle_queue = vehicle_queue;
+      render_vehicles_data[i].lane = i;
+      render_vehicles_data[i].window = window;
+      render_vehicles_data[i].renderer = renderer;
+
+      if (pthread_create(&render_vehicles_thread_id[i], NULL, &Render_Vehicles, (void *)&render_vehicles_data[i]) != 0) {
         fprintf(stderr, "Error in pthread_create for render_vehicles_thread\n");
+        return -1;
+      }
+      if (pthread_detach(render_vehicles_thread_id[i]) != 0) {
+        fprintf(stderr, "pthread_detach: render_vehicles_thread\n");
         return -1;
       }
     }
@@ -143,7 +151,7 @@ int main() {
 
     /* check if data is received from the generator */
     if (received_from_generator) {
-      Parser_Data parser_data = {
+      Parser_Thread_Data parser_data = {
         .vehicle_queue = vehicle_queue,
         .lane_queue = &lane_queue
       };
@@ -216,7 +224,7 @@ void Error_Handler(const char *calling_function_name, SDL_Window *window) {
  *
  * @retval void
  */
-void Set_Road_Dimensions(SDL_Rect *road, int x, int y, int w, int h) {
+void Set_Rectangle_Dimensions(SDL_Rect *road, int x, int y, int w, int h) {
   road->x = x;
   road->y = y;
   road->w = w;
@@ -242,8 +250,8 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
   SDL_Rect first_road;
   SDL_Rect second_road;
 
-  Set_Road_Dimensions(&first_road, 0, WINDOW_HEIGHT/2 - 105, WINDOW_WIDTH, 210);
-  Set_Road_Dimensions(&second_road, WINDOW_WIDTH/2 - 105, 0, 210, WINDOW_HEIGHT);
+  Set_Rectangle_Dimensions(&first_road, 0, WINDOW_HEIGHT/2 - 105, WINDOW_WIDTH, 210);
+  Set_Rectangle_Dimensions(&second_road, WINDOW_WIDTH/2 - 105, 0, 210, WINDOW_HEIGHT);
 
   /* set the color of the road */
   Error_Checker(SDL_SetRenderDrawColor(renderer, 65, 65, 65, 1), "SDL_SetRenderDrawColor", window);
@@ -365,7 +373,7 @@ void *Receive_From_Generator(void *arg) {
 
     if (is_generator_connected) {
       received_from_generator = 1;
-      printf("%s\n", buffer);
+      // printf("%s\n", buffer);
     }
   }
 
@@ -373,7 +381,7 @@ void *Receive_From_Generator(void *arg) {
 }
 
 void *Parse_Received_Data(void *arg) {
-  Parser_Data *parser_data = (Parser_Data *)arg;
+  Parser_Thread_Data *parser_data = (Parser_Thread_Data *)arg;
 
   int first_lane_digit = parser_data->data_buffer[5] - '0';
   int second_lane_digit = -1;
@@ -406,11 +414,40 @@ void *Parse_Received_Data(void *arg) {
 }
 
 void *Render_Vehicles(void *arg) {
-  int lane = *((int *)arg);
-  
-  switch (lane) {
-    case L_A2:
-      break;
+  Render_Vehicles_Thread_Data *render_vehicles_data = (Render_Vehicles_Thread_Data *)arg;
+
+  while (running) {
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 100000000; // 100 milliseconds
+    nanosleep(&ts, NULL);
+
+    switch (render_vehicles_data->lane) {
+      case L_A2:
+        Render_Particular_Lane(&(render_vehicles_data->vehicle_queue[L_A2]), L_A2, render_vehicles_data->window, render_vehicles_data->renderer);
+        break;
+      case L_A3:
+        Render_Particular_Lane(&(render_vehicles_data->vehicle_queue[L_A3]), L_A3, render_vehicles_data->window, render_vehicles_data->renderer);
+        break;
+      case L_B2:
+        Render_Particular_Lane(&(render_vehicles_data->vehicle_queue[L_B2]), L_B2, render_vehicles_data->window, render_vehicles_data->renderer);
+        break;
+      case L_B3:
+        Render_Particular_Lane(&(render_vehicles_data->vehicle_queue[L_B3]), L_B3, render_vehicles_data->window, render_vehicles_data->renderer);
+        break;
+      case L_C2:
+        Render_Particular_Lane(&(render_vehicles_data->vehicle_queue[L_C2]), L_C2, render_vehicles_data->window, render_vehicles_data->renderer);
+        break;
+      case L_C3:
+        Render_Particular_Lane(&(render_vehicles_data->vehicle_queue[L_C3]), L_C3, render_vehicles_data->window, render_vehicles_data->renderer);
+        break;
+      case L_D2:
+        Render_Particular_Lane(&(render_vehicles_data->vehicle_queue[L_D2]), L_D2, render_vehicles_data->window, render_vehicles_data->renderer);
+        break;
+      case L_D3:
+        Render_Particular_Lane(&(render_vehicles_data->vehicle_queue[L_D3]), L_D3, render_vehicles_data->window, render_vehicles_data->renderer);
+        break;
+    }
   }
 
   return NULL;
@@ -468,6 +505,27 @@ void Determine_Vehicle_Direction(Vehicle *vehicle, int lane) {
       vehicle->direction = D_UP;
       break;
   }
+}
+
+void Render_Particular_Lane(Vehicle_Queue *queue_to_render, int lane, SDL_Window *window, SDL_Renderer *renderer) {
+  // SDL_Rect first_road;
+  // SDL_Rect second_road;
+  //
+  // Set_Rectangle_Dimensions(&first_road, 0, WINDOW_HEIGHT/2 - 105, WINDOW_WIDTH, 210);
+  // Set_Rectangle_Dimensions(&second_road, WINDOW_WIDTH/2 - 105, 0, 210, WINDOW_HEIGHT);
+  //
+  // /* set the color of the road */
+  // Error_Checker(SDL_SetRenderDrawColor(renderer, 65, 65, 65, 1), "SDL_SetRenderDrawColor", window);
+  // Error_Checker(SDL_RenderFillRect(renderer, &first_road), "SDL_RenderFillRect", window);
+  // Error_Checker(SDL_RenderFillRect(renderer, &second_road), "SDL_RenderFillRect", window);
+
+
+  /* TODO, SEE:we will have some sort of mapping that gives us the fixed coordinate. For eg: for lane B and D, the X position is always the same and for lane A and C, the Y position is always the same while rendereing. Only the Y and X position is changed for each vehicle respectively. */
+  // for (int i = 0; i < queue_to_render->size; i++) {
+  //   if ((queue_to_render->vehicles[i].x == -1) &&(queue_to_render->vehicles[i].y == -1)) {
+  //   }
+  // }
+  printf("Lane: %d, Size: %d\n", lane, queue_to_render->size);
 }
 
 void Signal_Handler(int signal) {
