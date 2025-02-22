@@ -53,6 +53,9 @@ typedef struct Vehicle {
   /* position of the vehicle in the road */
   int x;
   int y;
+  /* width and height of the vehicle */
+  int w;
+  int h;
 } Vehicle;
 
 /* NOTE: we take the vehicle queue as a circular queue */
