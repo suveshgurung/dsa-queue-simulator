@@ -12,6 +12,8 @@ void Init_Vehicle_Queue(Vehicle_Queue *q) {
     q->vehicles[i].direction = -1;
     q->vehicles[i].x = -1;
     q->vehicles[i].y = -1;
+    q->vehicles[i].w = 0;
+    q->vehicles[i].h = 0;
   }
 }
 
@@ -37,7 +39,7 @@ void Enqueue_Vehicle(Vehicle_Queue *q, Vehicle v) {
 
   q->rear = (q->rear + 1) % MAX_VEHICLE_QUEUE_SIZE;
   q->vehicles[q->rear] = v;
-  /* size goes from 1 to 5 */
+  /* size goes from 1 to 10 */
   q->size = (q->size + 1) % (MAX_VEHICLE_QUEUE_SIZE + 1);
 }
 

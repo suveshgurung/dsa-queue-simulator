@@ -92,7 +92,6 @@ int main() {
   }
 
   pthread_t accept_connection_from_generator_thread_id;
-  pthread_t render_vehicles_thread_id;
   pthread_t check_for_connection_and_received_data_thread_id;
 
   /* start a new thread which accepts connection from generator */
@@ -147,22 +146,6 @@ int main() {
     return -1;
   }
 
-  /* make thread for lane rendering */
-  // Render_Vehicles_Thread_Data render_vehicles_thread_data = {
-  //   .vehicle_queue = vehicle_queue,
-  //   .window = window,
-  //   .renderer = renderer
-  // };
-  //
-  // if (pthread_create(&render_vehicles_thread_id, NULL, &Render_Vehicles, (void *)&render_vehicles_thread_data) != 0) {
-  //   fprintf(stderr, "error in pthread_create for render_vehicles_thread\n");
-  //   return -1;
-  // }
-  // if (pthread_detach(render_vehicles_thread_id) != 0) {
-  //   fprintf(stderr, "pthread_detach: render_vehicles_thread\n");
-  //   return -1;
-  // }
-
   while (running) {
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
@@ -172,6 +155,48 @@ int main() {
       }
     }
 
+    SDL_Rect *vehicles = NULL;
+
+    frame_start = SDL_GetTicks();
+
+    // Clear the renderer
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, static_texture, NULL, NULL);
+
+    int vehicles_size = 0;
+    int vehicles_index = 0;
+
+    for (int i = 0; i < 12; i++) {
+      vehicles_size += vehicle_queue[i].size;
+      if (vehicles_size != 0) {
+        vehicles = (SDL_Rect *)realloc(vehicles, sizeof(SDL_Rect) * vehicles_size);
+        if (vehicles == NULL) {
+          perror("realloc");
+          free(vehicles);
+          return 1;
+        }
+      }
+
+      for (int j = 0; j < vehicle_queue[i].size; j++) {
+        Set_Rectangle_Dimensions(&vehicles[vehicles_index], vehicle_queue[i].vehicles[j].x, vehicle_queue[i].vehicles[j].y, vehicle_queue[i].vehicles[j].w, vehicle_queue[i].vehicles[j].h);
+        vehicles_index++;
+      }
+    }
+
+    Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255), "SDL_SetRenderDrawColor", window);
+    for (int i = 0; i < vehicles_index; i++) {
+      Error_Checker(SDL_RenderFillRect(renderer, &vehicles[i]), "SDL_RenderFillRect", window);
+    }
+
+    SDL_RenderPresent(renderer);
+
+    frame_time = SDL_GetTicks() - frame_start;
+    if (FRAME_DELAY > frame_time) {
+      SDL_Delay(FRAME_DELAY - frame_time); // Delay to maintain frame rate
+    }
+
+    free(vehicles);
   }
 
   SDL_DestroyWindow(window);
@@ -325,7 +350,6 @@ void *Receive_From_Generator(void *arg) {
 
     if (is_generator_connected) {
       received_from_generator = 1;
-      printf("%s\n", buffer);
     }
   }
 
@@ -358,7 +382,7 @@ void *Parse_Received_Data(void *arg) {
   for (int i = 0; i < number_of_vehicles; i++) {
     Vehicle vehicle;
     Determine_Vehicle_Direction_And_Initial_Position(&vehicle, lane);
-    Enqueue_Vehicle(&parser_data->vehicle_queue[lane], vehicle);
+    Enqueue_Vehicle(&(parser_data->vehicle_queue[lane]), vehicle);
   }
 
   return NULL;
@@ -503,14 +527,14 @@ void Determine_Vehicle_Direction_And_Initial_Position(Vehicle *vehicle, int lane
       else {
         vehicle->direction = D_LEFT;
       }
-      vehicle->x = WINDOW_WIDTH;      // vehicles on lane B2 start from the far right of the screen.
+      vehicle->x = WINDOW_WIDTH - Y_FIXED_VEHICLE_WIDTH;      // vehicles on lane B2 start from the far right of the screen.
       vehicle->y = fixed_y_coordinate[L_B2];
       vehicle->w = Y_FIXED_VEHICLE_WIDTH;
       vehicle->h = Y_FIXED_VEHICLE_HEIGHT;
       break;
     case L_B3:         /* BL3 */
       vehicle->direction = D_DOWN;
-      vehicle->x = WINDOW_WIDTH;      // vehicles on lane B3 start from the far right of the screen.
+      vehicle->x = WINDOW_WIDTH - Y_FIXED_VEHICLE_WIDTH;      // vehicles on lane B3 start from the far right of the screen.
       vehicle->y = fixed_y_coordinate[L_B3];
       vehicle->w = Y_FIXED_VEHICLE_WIDTH;
       vehicle->h = Y_FIXED_VEHICLE_HEIGHT;
@@ -523,14 +547,14 @@ void Determine_Vehicle_Direction_And_Initial_Position(Vehicle *vehicle, int lane
         vehicle->direction = D_RIGHT;
       }
       vehicle->x = fixed_x_coordinate[L_C2];
-      vehicle->y = WINDOW_HEIGHT;     // vehicles on lane C2 start from the bottom of the screen.
+      vehicle->y = WINDOW_HEIGHT - X_FIXED_VEHICLE_HEIGHT;     // vehicles on lane C2 start from the bottom of the screen.
       vehicle->w = X_FIXED_VEHICLE_WIDTH;
       vehicle->h = X_FIXED_VEHICLE_HEIGHT;
       break;
     case L_C3:         /* CL3 */
       vehicle->direction = D_LEFT;
       vehicle->x = fixed_x_coordinate[L_C3];
-      vehicle->y = WINDOW_HEIGHT;     // vehicles on lane C3 start from the bottom of the screen.
+      vehicle->y = WINDOW_HEIGHT - X_FIXED_VEHICLE_HEIGHT;     // vehicles on lane C3 start from the bottom of the screen.
       vehicle->w = X_FIXED_VEHICLE_WIDTH;
       vehicle->h = X_FIXED_VEHICLE_HEIGHT;
       break;
