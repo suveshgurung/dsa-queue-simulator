@@ -38,6 +38,11 @@ typedef struct Render_Vehicles_Thread_Data {
   SDL_Renderer *renderer;
 } Render_Vehicles_Thread_Data;
 
+typedef struct Check_For_Connection_And_Received_Data_Thread_Params {
+  Vehicle_Queue *vehicle_queue;
+  Lane_Queue *lane_queue;
+} Check_For_Connection_And_Received_Data_Thread_Params;
+
 /* defines */
 #define FPS 60
 #define FRAME_DELAY (1000.0 / FPS)
@@ -61,6 +66,7 @@ void Render_Roads_Traffic_Lights(SDL_Renderer *, SDL_Window *);
 void *Accept_Connection_From_Generator(void *);
 void *Receive_From_Generator(void *);
 void *Parse_Received_Data(void *);
+void *Check_For_Connection_And_Received_Data(void *);
 
 void *Render_Vehicles(void *);
 void Determine_Vehicle_Direction_And_Initial_Position(Vehicle *, int);

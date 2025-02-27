@@ -52,21 +52,27 @@ int main() {
   }
 
   static_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, WINDOW_WIDTH, WINDOW_HEIGHT);
+  if (static_texture == NULL) {
+    fprintf(stderr, "SDL_CreateTexture");
+  }
+
   SDL_SetRenderTarget(renderer, static_texture);
+
+  /* set the background color of the whole texture to white */
+  Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255), "SDL_SetRenderDrawColor", window);
+  /* render the previously set background color */
+  Error_Checker(SDL_RenderClear(renderer), "SDL_RenderClear", window);
 
   Render_Roads_Traffic_Lights(renderer, window);
 
   SDL_SetRenderTarget(renderer, NULL);
+
+  Error_Checker(SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255), "SDL_SetRenderDrawColor", window);
+  SDL_RenderClear(renderer);
+
+  /* render the static texture i.e. the roads and traffic lights */
   SDL_RenderCopy(renderer, static_texture, NULL, NULL);
   SDL_RenderPresent(renderer);
-
-  SDL_RenderCopy(renderer, static_texture, NULL, NULL);
-  SDL_Rect vehicle;
-  Set_Rectangle_Dimensions(&vehicle, 510, 0, X_FIXED_VEHICLE_WIDTH, X_FIXED_VEHICLE_HEIGHT);
-  Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 0, 0, 1), "SDL_SetRenderDrawColor", window);
-  Error_Checker(SDL_RenderFillRect(renderer, &vehicle), "SDL_RenderFillRect", window);
-  SDL_RenderPresent(renderer);
-
 
   /* open the socket for listening for generated traffic. */
   int socket_FD = socket(AF_INET, SOCK_STREAM, 0);
@@ -87,10 +93,9 @@ int main() {
 
   pthread_t accept_connection_from_generator_thread_id;
   pthread_t render_vehicles_thread_id;
-  pthread_t listen_from_generator_thread_id;
-  pthread_t parse_received_data_thread_id;
+  pthread_t check_for_connection_and_received_data_thread_id;
 
-  /* start a new thread which accepts for connection from generator */
+  /* start a new thread which accepts connection from generator */
   if (pthread_create(&accept_connection_from_generator_thread_id, NULL, &Accept_Connection_From_Generator, (void *)&socket_FD) != 0) {
     fprintf(stderr, "Error in pthread_create for accept_connection_from_generator_thread\n");
     return -1;
@@ -128,35 +133,34 @@ int main() {
   }
   Init_Lane_Queue(&lane_queue);
 
-  /* make thread for lane rendering */
-  Render_Vehicles_Thread_Data render_vehicles_thread_data = {
+  Check_For_Connection_And_Received_Data_Thread_Params check_for_connection_and_received_data_thread_params = {
     .vehicle_queue = vehicle_queue,
-    .window = window,
-    .renderer = renderer
+    .lane_queue = &lane_queue
   };
 
-  if (pthread_create(&render_vehicles_thread_id, NULL, &Render_Vehicles, (void *)&render_vehicles_thread_data) != 0) {
-    fprintf(stderr, "error in pthread_create for render_vehicles_thread\n");
+  if (pthread_create(&check_for_connection_and_received_data_thread_id, NULL, &Check_For_Connection_And_Received_Data, (void *)&check_for_connection_and_received_data_thread_params) != 0) {
+    fprintf(stderr, "error in pthread_create for check_for_connection_and_received_data_thread\n");
     return -1;
   }
-  if (pthread_detach(render_vehicles_thread_id) != 0) {
-    fprintf(stderr, "pthread_detach: render_vehicles_thread\n");
+  if (pthread_detach(check_for_connection_and_received_data_thread_id) != 0) {
+    fprintf(stderr, "pthread_detach: check_for_connection_and_received_data_thread\n");
     return -1;
   }
-  // for (int i = 0; i < 12; i++) {
-  //   render_vehicles_data[i].vehicle_queue = vehicle_queue;
-  //   render_vehicles_data[i].lane = i;
-  //   render_vehicles_data[i].window = window;
-  //   render_vehicles_data[i].renderer = renderer;
+
+  /* make thread for lane rendering */
+  // Render_Vehicles_Thread_Data render_vehicles_thread_data = {
+  //   .vehicle_queue = vehicle_queue,
+  //   .window = window,
+  //   .renderer = renderer
+  // };
   //
-  //   if (pthread_create(&render_vehicles_thread_id[i], null, &render_vehicles, (void *)&render_vehicles_data[i]) != 0) {
-  //     fprintf(stderr, "error in pthread_create for render_vehicles_thread\n");
-  //     return -1;
-  //   }
-  //   if (pthread_detach(render_vehicles_thread_id[i]) != 0) {
-  //     fprintf(stderr, "pthread_detach: render_vehicles_thread\n");
-  //     return -1;
-  //   }
+  // if (pthread_create(&render_vehicles_thread_id, NULL, &Render_Vehicles, (void *)&render_vehicles_thread_data) != 0) {
+  //   fprintf(stderr, "error in pthread_create for render_vehicles_thread\n");
+  //   return -1;
+  // }
+  // if (pthread_detach(render_vehicles_thread_id) != 0) {
+  //   fprintf(stderr, "pthread_detach: render_vehicles_thread\n");
+  //   return -1;
   // }
 
   while (running) {
@@ -168,39 +172,6 @@ int main() {
       }
     }
 
-    /* check if generator side is trying to connect */
-    if (generator_requesting_connection) {
-      /* start a new thread which paralelly listens for data from traffic-generator program */
-      if (pthread_create(&listen_from_generator_thread_id, NULL, &Receive_From_Generator, NULL) != 0) {
-        fprintf(stderr, "pthread_create: listen_from_generator_thread\n");
-        return -1;
-      }
-      if (pthread_detach(listen_from_generator_thread_id) != 0) {
-        fprintf(stderr, "pthread_detach: listen_from_generator_thread\n");
-        return -1;
-      }
-      generator_requesting_connection = 0;
-    }
-
-    /* check if data is received from the generator */
-    if (received_from_generator) {
-      Parser_Thread_Data parser_data = {
-        .vehicle_queue = vehicle_queue,
-        .lane_queue = &lane_queue
-      };
-      memcpy(parser_data.data_buffer, buffer, strlen(buffer) + 1);
-
-      /* start a new thread which parses and renders the received data */
-      if (pthread_create(&parse_received_data_thread_id, NULL, Parse_Received_Data, (void *)&parser_data) != 0) {
-        fprintf(stderr, "pthread_create: parse_received_data_thread\n");
-        return -1;
-      }
-      if (pthread_detach(parse_received_data_thread_id) != 0) {
-        fprintf(stderr, "pthread_detach: parse_received_data_thread\n");
-        return -1;
-      }
-      received_from_generator = 0;
-    }
   }
 
   SDL_DestroyWindow(window);
@@ -275,12 +246,6 @@ void Set_Rectangle_Dimensions(SDL_Rect *road, int x, int y, int w, int h) {
  * @retval void
  */
 void Render_Roads_Traffic_Lights(SDL_Renderer *renderer, SDL_Window *window) {
-  /* set the background color of the whole screen to white */
-  Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255), "SDL_SetRenderDrawColor", window);
-
-  /* render the previously set background color */
-  Error_Checker(SDL_RenderClear(renderer), "SDL_RenderClear", window);
-
   SDL_Rect first_road;
   SDL_Rect second_road;
 
@@ -360,7 +325,7 @@ void *Receive_From_Generator(void *arg) {
 
     if (is_generator_connected) {
       received_from_generator = 1;
-      // printf("%s\n", buffer);
+      printf("%s\n", buffer);
     }
   }
 
@@ -399,45 +364,98 @@ void *Parse_Received_Data(void *arg) {
   return NULL;
 }
 
+void *Check_For_Connection_And_Received_Data(void *arg) {
+  Check_For_Connection_And_Received_Data_Thread_Params *check_for_connection_and_received_data_thread_params = (Check_For_Connection_And_Received_Data_Thread_Params *)arg;
+  Vehicle_Queue *vehicle_queue = check_for_connection_and_received_data_thread_params->vehicle_queue;
+  Lane_Queue *lane_queue = check_for_connection_and_received_data_thread_params->lane_queue;
+
+  pthread_t listen_from_generator_thread_id;
+  pthread_t parse_received_data_thread_id;
+
+  while (running) {
+    /* check if generator side is trying to connect */
+    if (generator_requesting_connection) {
+      /* start a new thread which paralelly listens for data from traffic-generator program */
+      if (pthread_create(&listen_from_generator_thread_id, NULL, &Receive_From_Generator, NULL) != 0) {
+        fprintf(stderr, "pthread_create: listen_from_generator_thread\n");
+        exit(1);
+      }
+      if (pthread_detach(listen_from_generator_thread_id) != 0) {
+        fprintf(stderr, "pthread_detach: listen_from_generator_thread\n");
+        exit(1);
+      }
+      generator_requesting_connection = 0;
+    }
+
+    /* check if data is received from the generator */
+    if (received_from_generator) {
+      Parser_Thread_Data parser_data = {
+        .vehicle_queue = vehicle_queue,
+        .lane_queue = lane_queue
+      };
+      memcpy(parser_data.data_buffer, buffer, strlen(buffer) + 1);
+
+      /* start a new thread which parses and renders the received data */
+      if (pthread_create(&parse_received_data_thread_id, NULL, Parse_Received_Data, (void *)&parser_data) != 0) {
+        fprintf(stderr, "pthread_create: parse_received_data_thread\n");
+        exit(1);
+      }
+      if (pthread_detach(parse_received_data_thread_id) != 0) {
+        fprintf(stderr, "pthread_detach: parse_received_data_thread\n");
+        exit(1);
+      }
+      received_from_generator = 0;
+    }
+  }
+
+  return NULL;
+}
+
 void *Render_Vehicles(void *arg) {
   Render_Vehicles_Thread_Data *render_vehicles_data = (Render_Vehicles_Thread_Data *)arg;
   Vehicle_Queue *vehicle_queue = render_vehicles_data->vehicle_queue;
   SDL_Window *window = render_vehicles_data->window;
   SDL_Renderer *renderer = render_vehicles_data->renderer;
 
-  while (running) {
-    // struct timespec ts;
-    // ts.tv_sec = 0;
-    // ts.tv_nsec = 100000000; // 100 milliseconds
-    // nanosleep(&ts, NULL);
+  SDL_Rect *vehicles = NULL;
 
+  while (running) {
     frame_start = SDL_GetTicks();
-    SDL_Rect *vehicles = NULL;
+
+    // Clear the renderer
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, static_texture, NULL, NULL);
+
     int vehicles_size = 0;
     int vehicles_index = 0;
+
     for (int i = 0; i < 12; i++) {
       vehicles_size += vehicle_queue[i].size;
       if (vehicles_size != 0) {
         vehicles = (SDL_Rect *)realloc(vehicles, sizeof(SDL_Rect) * vehicles_size);
         if (vehicles == NULL) {
           perror("realloc");
+          free(vehicles);
           return NULL;
         }
       }
 
       for (int j = 0; j < vehicle_queue[i].size; j++) {
-        printf("LANE: %d, Size: %d\n", i, vehicle_queue[i].size);
         Set_Rectangle_Dimensions(&vehicles[vehicles_index], vehicle_queue[i].vehicles[j].x, vehicle_queue[i].vehicles[j].y, vehicles[j].w, vehicles[j].h);
         vehicles_index++;
       }
     }
 
-    SDL_RenderCopy(renderer, static_texture, NULL, NULL);
+    Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 0, 0, 1), "SDL_SetRenderDrawColor", window);
     for (int i = 0; i < vehicles_index; i++) {
-      Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 0, 0, 1), "SDL_SetRenderDrawColor", window);
       Error_Checker(SDL_RenderFillRect(renderer, &vehicles[i]), "SDL_RenderFillRect", window);
     }
-    free(vehicles);
+
+    SDL_Rect test;
+    Set_Rectangle_Dimensions(&test, 510, 0, X_FIXED_VEHICLE_WIDTH, X_FIXED_VEHICLE_HEIGHT);
+    Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255), "SDL_SetRenderDrawColor", window);
+    Error_Checker(SDL_RenderFillRect(renderer, &test), "SDL_RenderFillRect", window);
 
     SDL_RenderPresent(renderer);
 
@@ -446,6 +464,8 @@ void *Render_Vehicles(void *arg) {
       SDL_Delay(FRAME_DELAY - frame_time); // Delay to maintain frame rate
     }
   }
+
+  free(vehicles);
 
   return NULL;
 }
