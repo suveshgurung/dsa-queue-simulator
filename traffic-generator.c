@@ -32,7 +32,7 @@ int main() {
 
   while (is_running) {
     Generate_Vehicles();
-    sleep(1);
+    sleep(3);
   }
 
   close(socket_FD);

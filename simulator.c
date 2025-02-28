@@ -20,8 +20,8 @@ int generator_requesting_connection = 0;
 int generator_socket_FD;
 int received_from_generator = 0;
 char buffer[MAX_SOCKET_BUFFER_SIZE];
-int fixed_x_coordinate[12] = { 370, 440, 510, -1, -1, -1, 510, 440, 370, -1, -1, -1 };
-int fixed_y_coordinate[12] = { -1, -1, -1, 370, 440, 510, -1, -1, -1, 510, 440, 370 };
+float fixed_x_coordinate[NUMBER_OF_LANES] = { 370.0f, 440.0f, 510.0f, -1.0f, -1.0f, -1.0f, 510.0f, 440.0f, 370.0f, -1.0f, -1.0f, -1.0f };
+float fixed_y_coordinate[NUMBER_OF_LANES] = { -1.0f, -1.0f, -1.0f, 370.0f, 440.0f, 510.0f, -1.0f, -1.0f, -1.0f, 510.0f, 440.0f, 370.0f };
 Uint32 frame_start;
 int frame_time;
 SDL_Texture *static_texture;
@@ -124,11 +124,11 @@ int main() {
    * vehicle_queue[10] -> R_D L_D2
    * vehicle_queue[11] -> R_D L_D3
    */
-  Vehicle_Queue vehicle_queue[12];
+  Vehicle_Queue vehicle_queue[NUMBER_OF_LANES];
   Lane_Queue lane_queue;
 
   /* initialize the queues. */
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < NUMBER_OF_LANES; i++) {
     Init_Vehicle_Queue(&vehicle_queue[i]);
   }
   Init_Lane_Queue(&lane_queue);
@@ -156,11 +156,12 @@ int main() {
       }
     }
 
+    Change_Vehicle_Position(vehicle_queue);
+
     SDL_Rect *vehicles = NULL;
 
     frame_start = SDL_GetTicks();
 
-    // Clear the renderer
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, static_texture, NULL, NULL);
@@ -168,7 +169,7 @@ int main() {
     int vehicles_size = 0;
     int vehicles_index = 0;
 
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < NUMBER_OF_LANES; i++) {
       vehicles_size += vehicle_queue[i].size;
       if (vehicles_size != 0) {
         vehicles = (SDL_Rect *)realloc(vehicles, sizeof(SDL_Rect) * vehicles_size);
@@ -451,14 +452,14 @@ void Determine_Vehicle_Properties(Vehicle *vehicle, int lane) {
         vehicle->direction = D_LEFT;
       }
       vehicle->x = fixed_x_coordinate[L_A2];
-      vehicle->y = 0;                 // vehicles on lane A2 start from top of the screen.
+      vehicle->y = -X_FIXED_VEHICLE_HEIGHT;                                         // vehicles on lane A2 start from top of the screen.
       vehicle->w = X_FIXED_VEHICLE_WIDTH;
       vehicle->h = X_FIXED_VEHICLE_HEIGHT;
       break;
     case L_A3:         /* AL3 */
       vehicle->direction = D_RIGHT;
       vehicle->x = fixed_x_coordinate[L_A3];
-      vehicle->y = 0;                 // vehicles on lane A3 start from top of the screen.
+      vehicle->y = -X_FIXED_VEHICLE_HEIGHT;                                         // vehicles on lane A3 start from top of the screen.
       vehicle->w = X_FIXED_VEHICLE_WIDTH;
       vehicle->h = X_FIXED_VEHICLE_HEIGHT;
       break;
@@ -469,14 +470,14 @@ void Determine_Vehicle_Properties(Vehicle *vehicle, int lane) {
       else {
         vehicle->direction = D_LEFT;
       }
-      vehicle->x = WINDOW_WIDTH - Y_FIXED_VEHICLE_WIDTH;      // vehicles on lane B2 start from the far right of the screen.
+      vehicle->x = WINDOW_WIDTH + Y_FIXED_VEHICLE_WIDTH;      // vehicles on lane B2 start from the far right of the screen.
       vehicle->y = fixed_y_coordinate[L_B2];
       vehicle->w = Y_FIXED_VEHICLE_WIDTH;
       vehicle->h = Y_FIXED_VEHICLE_HEIGHT;
       break;
     case L_B3:         /* BL3 */
       vehicle->direction = D_DOWN;
-      vehicle->x = WINDOW_WIDTH - Y_FIXED_VEHICLE_WIDTH;      // vehicles on lane B3 start from the far right of the screen.
+      vehicle->x = WINDOW_WIDTH + Y_FIXED_VEHICLE_WIDTH;      // vehicles on lane B3 start from the far right of the screen.
       vehicle->y = fixed_y_coordinate[L_B3];
       vehicle->w = Y_FIXED_VEHICLE_WIDTH;
       vehicle->h = Y_FIXED_VEHICLE_HEIGHT;
@@ -489,14 +490,14 @@ void Determine_Vehicle_Properties(Vehicle *vehicle, int lane) {
         vehicle->direction = D_RIGHT;
       }
       vehicle->x = fixed_x_coordinate[L_C2];
-      vehicle->y = WINDOW_HEIGHT - X_FIXED_VEHICLE_HEIGHT;     // vehicles on lane C2 start from the bottom of the screen.
+      vehicle->y = WINDOW_HEIGHT + X_FIXED_VEHICLE_HEIGHT;     // vehicles on lane C2 start from the bottom of the screen.
       vehicle->w = X_FIXED_VEHICLE_WIDTH;
       vehicle->h = X_FIXED_VEHICLE_HEIGHT;
       break;
     case L_C3:         /* CL3 */
       vehicle->direction = D_LEFT;
       vehicle->x = fixed_x_coordinate[L_C3];
-      vehicle->y = WINDOW_HEIGHT - X_FIXED_VEHICLE_HEIGHT;     // vehicles on lane C3 start from the bottom of the screen.
+      vehicle->y = WINDOW_HEIGHT + X_FIXED_VEHICLE_HEIGHT;     // vehicles on lane C3 start from the bottom of the screen.
       vehicle->w = X_FIXED_VEHICLE_WIDTH;
       vehicle->h = X_FIXED_VEHICLE_HEIGHT;
       break;
@@ -507,18 +508,92 @@ void Determine_Vehicle_Properties(Vehicle *vehicle, int lane) {
       else {
         vehicle->direction = D_RIGHT;
       }
-      vehicle->x = 0;      // vehicles on lane D2 start from the left of the screen.
+      vehicle->x = -Y_FIXED_VEHICLE_WIDTH;                                           // vehicles on lane D2 start from the left of the screen.
       vehicle->y = fixed_y_coordinate[L_D2];
       vehicle->w = Y_FIXED_VEHICLE_WIDTH;
       vehicle->h = Y_FIXED_VEHICLE_HEIGHT;
       break;
     case L_D3:         /* DL3 */
       vehicle->direction = D_UP;
-      vehicle->x = 0;      // vehicles on lane D3 start from the left of the screen.
+      vehicle->x = -Y_FIXED_VEHICLE_WIDTH;                                           // vehicles on lane D3 start from the left of the screen.
       vehicle->y = fixed_y_coordinate[L_D3];
       vehicle->w = Y_FIXED_VEHICLE_WIDTH;
       vehicle->h = Y_FIXED_VEHICLE_HEIGHT;
       break;
+  }
+}
+
+void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
+  for (int i = 0; i < NUMBER_OF_LANES; i++) {
+    /* change the position of first vehicle in the queue */
+    if (i == L_A1) {
+      /* need to implement for lane L_A1 */
+    }
+    else if (i == L_A2 || i == L_A3) {
+      if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y <= A_AND_D_FIXED_STOPPING_POINT) {
+        vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y += VEHICLE_SPEED;
+      }
+    }
+    else if (i == L_B1) {
+      /* need to implement for lane L_B1 */
+    }
+    else if (i == L_B2 || i == L_B3) {
+      if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x >= B_AND_C_FIXED_STOPPING_POINT) {
+        vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x -= VEHICLE_SPEED;
+      }
+    }
+    else if (i == L_C1) {
+      /* need to implement for lane L_C1 */
+    }
+    else if (i == L_C2 || i == L_C3) {
+      if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y >= B_AND_C_FIXED_STOPPING_POINT) {
+        vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y -= VEHICLE_SPEED;
+      }
+    }
+    else if (i == L_D1) {
+      /* need to implement for lane L_D1 */
+    }
+    else if (i == L_D2 || i == L_D3) {
+      if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x <= A_AND_D_FIXED_STOPPING_POINT) {
+        vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x += VEHICLE_SPEED;
+      }
+    }
+
+    /* change the position of the remaining vehicles in the queue with respect to the preceeding vehicle */
+    for (int j = vehicle_queue[i].front + 2; j < vehicle_queue[i].size; j++) {
+      if (i == L_A1) {
+        /* need to implement for lane L_A1 */
+      }
+      else if (i == L_A2 || i == L_A3) {
+        if (vehicle_queue[i].vehicles[j].y <= vehicle_queue[i].vehicles[j - 1].y - DISTANCE_BETWEEN_VEHICLES) {
+          vehicle_queue[i].vehicles[j].y += VEHICLE_SPEED;
+        }
+      }
+      else if (i == L_B1) {
+        /* need to implement for lane L_B1 */
+      }
+      else if (i == L_B2 || i == L_B3) {
+        if (vehicle_queue[i].vehicles[j].x >= vehicle_queue[i].vehicles[j - 1].x + DISTANCE_BETWEEN_VEHICLES) {
+          vehicle_queue[i].vehicles[j].x -= VEHICLE_SPEED;
+        }
+      }
+      else if (i == L_C1) {
+        /* need to implement for lane L_C1 */
+      }
+      else if (i == L_C2 || i == L_C3) {
+        if (vehicle_queue[i].vehicles[j].y >= vehicle_queue[i].vehicles[j - 1].y + DISTANCE_BETWEEN_VEHICLES) {
+          vehicle_queue[i].vehicles[j].y -= VEHICLE_SPEED;
+        }
+      }
+      else if (i == L_D1) {
+        /* need to implement for lane L_B1 */
+      }
+      else if (i == L_D2 || i == L_D3) {
+        if (vehicle_queue[i].vehicles[j].x <= vehicle_queue[i].vehicles[j - 1].x - DISTANCE_BETWEEN_VEHICLES) {
+          vehicle_queue[i].vehicles[j].x += VEHICLE_SPEED;
+        }
+      }
+    }
   }
 }
 

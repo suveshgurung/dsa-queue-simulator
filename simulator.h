@@ -8,14 +8,29 @@
 #include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 
+/* defines */
+#define FPS 60
+#define FRAME_DELAY (1000.0 / FPS)
+#define WINDOW_WIDTH 900
+#define WINDOW_HEIGHT 900
+#define NUMBER_OF_LANES 12
+#define X_FIXED_VEHICLE_WIDTH 20
+#define X_FIXED_VEHICLE_HEIGHT 30
+#define Y_FIXED_VEHICLE_WIDTH 30 
+#define Y_FIXED_VEHICLE_HEIGHT 20
+#define VEHICLE_SPEED 0.7
+#define DISTANCE_BETWEEN_VEHICLES 40
+#define A_AND_D_FIXED_STOPPING_POINT 315
+#define B_AND_C_FIXED_STOPPING_POINT 555
+
 extern int running;
 extern int generator_requesting_connection;
 extern int generator_socket_FD;
 extern int received_from_generator;
 extern char buffer[MAX_SOCKET_BUFFER_SIZE];
 
-extern int fixed_x_coordinate[12];
-extern int fixed_y_coordinate[12];
+extern float fixed_x_coordinate[NUMBER_OF_LANES];
+extern float fixed_y_coordinate[NUMBER_OF_LANES];
 
 extern Uint32 frame_start;
 extern int frame_time;
@@ -36,20 +51,6 @@ typedef struct Check_For_Connection_And_Received_Data_Thread_Params {
   Lane_Queue *lane_queue;
 } Check_For_Connection_And_Received_Data_Thread_Params;
 
-/* defines */
-#define FPS 60
-#define FRAME_DELAY (1000.0 / FPS)
-#define WINDOW_WIDTH 900
-#define WINDOW_HEIGHT 900
-#define X_FIXED_VEHICLE_WIDTH 20
-#define X_FIXED_VEHICLE_HEIGHT 30
-#define Y_FIXED_VEHICLE_WIDTH 30 
-#define Y_FIXED_VEHICLE_HEIGHT 20
-#define VEHICLE_SPEED 1
-#define DISTANCE_BETWEEN_VEHICLES 40
-#define A_AND_D_FIXED_STOPPING_POINT 315
-#define B_AND_C_FIXED_STOPPING_POINT 555
-
 /* function prototypes */
 void Error_Checker(int, const char *, SDL_Window *);
 void Error_Handler(const char *, SDL_Window *);
@@ -63,7 +64,7 @@ void *Parse_Received_Data(void *);
 void *Check_For_Connection_And_Received_Data(void *);
 
 void Determine_Vehicle_Properties(Vehicle *, int);
-void Render_Particular_Lane(Vehicle_Queue *, int, SDL_Window *, SDL_Renderer *);
+void Change_Vehicle_Position(Vehicle_Queue *);
 
 void Signal_Handler(int);
 

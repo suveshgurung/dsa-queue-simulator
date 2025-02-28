@@ -3,8 +3,8 @@
 
 /* defines */
 
-/* for now each lane can accomodate 10 vehicles */
-#define MAX_VEHICLE_QUEUE_SIZE 10
+/* each lane can accomodate 9 vehicles */
+#define MAX_VEHICLE_QUEUE_SIZE 9
 /* there are 4 lanes for traffic conditions */
 #define MAX_LANE_QUEUE_SIZE 4
 
@@ -51,8 +51,8 @@ enum Lanes {
 typedef struct Vehicle {
   int direction;
   /* position of the vehicle in the road */
-  int x;
-  int y;
+  float x;
+  float y;
   /* width and height of the vehicle */
   int w;
   int h;
