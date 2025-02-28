@@ -25,18 +25,11 @@ extern SDL_Rect *vehicles_to_render;
 extern int number_of_vehicle_to_render;
 
 /* structures */
-typedef struct Parser_Thread_Data {
+typedef struct Parse_Received_Data_Thread_Params {
   Vehicle_Queue *vehicle_queue;
   Lane_Queue *lane_queue;
   char data_buffer[MAX_SOCKET_BUFFER_SIZE];
-} Parser_Thread_Data;
-
-typedef struct Render_Vehicles_Thread_Data {
-  Vehicle_Queue *vehicle_queue;
-  /* for rendering purpose */
-  SDL_Window *window;
-  SDL_Renderer *renderer;
-} Render_Vehicles_Thread_Data;
+} Parse_Received_Data_Thread_Params;
 
 typedef struct Check_For_Connection_And_Received_Data_Thread_Params {
   Vehicle_Queue *vehicle_queue;
@@ -52,6 +45,7 @@ typedef struct Check_For_Connection_And_Received_Data_Thread_Params {
 #define X_FIXED_VEHICLE_HEIGHT 30
 #define Y_FIXED_VEHICLE_WIDTH 30 
 #define Y_FIXED_VEHICLE_HEIGHT 20
+#define VEHICLE_SPEED 1
 #define DISTANCE_BETWEEN_VEHICLES 40
 #define A_AND_D_FIXED_STOPPING_POINT 315
 #define B_AND_C_FIXED_STOPPING_POINT 555
@@ -68,8 +62,7 @@ void *Receive_From_Generator(void *);
 void *Parse_Received_Data(void *);
 void *Check_For_Connection_And_Received_Data(void *);
 
-void *Render_Vehicles(void *);
-void Determine_Vehicle_Direction_And_Initial_Position(Vehicle *, int);
+void Determine_Vehicle_Properties(Vehicle *, int);
 void Render_Particular_Lane(Vehicle_Queue *, int, SDL_Window *, SDL_Renderer *);
 
 void Signal_Handler(int);

@@ -1,4 +1,5 @@
 /* TODO : see how to render traffic lights */
+/* TODO : change the position of vehicles */
 #include "simulator.h"
 #include "queue.h"
 #include <stdlib.h>
@@ -357,7 +358,7 @@ void *Receive_From_Generator(void *arg) {
 }
 
 void *Parse_Received_Data(void *arg) {
-  Parser_Thread_Data *parser_data = (Parser_Thread_Data *)arg;
+  Parse_Received_Data_Thread_Params *parser_data = (Parse_Received_Data_Thread_Params *)arg;
 
   int first_lane_digit = parser_data->data_buffer[5] - '0'; int second_lane_digit = -1;
   int lane;
@@ -381,7 +382,7 @@ void *Parse_Received_Data(void *arg) {
   /* enqueue number_of_vehicles of vehicles */
   for (int i = 0; i < number_of_vehicles; i++) {
     Vehicle vehicle;
-    Determine_Vehicle_Direction_And_Initial_Position(&vehicle, lane);
+    Determine_Vehicle_Properties(&vehicle, lane);
     Enqueue_Vehicle(&(parser_data->vehicle_queue[lane]), vehicle);
   }
 
@@ -413,7 +414,7 @@ void *Check_For_Connection_And_Received_Data(void *arg) {
 
     /* check if data is received from the generator */
     if (received_from_generator) {
-      Parser_Thread_Data parser_data = {
+      Parse_Received_Data_Thread_Params parser_data = {
         .vehicle_queue = vehicle_queue,
         .lane_queue = lane_queue
       };
@@ -435,66 +436,7 @@ void *Check_For_Connection_And_Received_Data(void *arg) {
   return NULL;
 }
 
-void *Render_Vehicles(void *arg) {
-  Render_Vehicles_Thread_Data *render_vehicles_data = (Render_Vehicles_Thread_Data *)arg;
-  Vehicle_Queue *vehicle_queue = render_vehicles_data->vehicle_queue;
-  SDL_Window *window = render_vehicles_data->window;
-  SDL_Renderer *renderer = render_vehicles_data->renderer;
-
-  SDL_Rect *vehicles = NULL;
-
-  while (running) {
-    frame_start = SDL_GetTicks();
-
-    // Clear the renderer
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, static_texture, NULL, NULL);
-
-    int vehicles_size = 0;
-    int vehicles_index = 0;
-
-    for (int i = 0; i < 12; i++) {
-      vehicles_size += vehicle_queue[i].size;
-      if (vehicles_size != 0) {
-        vehicles = (SDL_Rect *)realloc(vehicles, sizeof(SDL_Rect) * vehicles_size);
-        if (vehicles == NULL) {
-          perror("realloc");
-          free(vehicles);
-          return NULL;
-        }
-      }
-
-      for (int j = 0; j < vehicle_queue[i].size; j++) {
-        Set_Rectangle_Dimensions(&vehicles[vehicles_index], vehicle_queue[i].vehicles[j].x, vehicle_queue[i].vehicles[j].y, vehicles[j].w, vehicles[j].h);
-        vehicles_index++;
-      }
-    }
-
-    Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 0, 0, 1), "SDL_SetRenderDrawColor", window);
-    for (int i = 0; i < vehicles_index; i++) {
-      Error_Checker(SDL_RenderFillRect(renderer, &vehicles[i]), "SDL_RenderFillRect", window);
-    }
-
-    SDL_Rect test;
-    Set_Rectangle_Dimensions(&test, 510, 0, X_FIXED_VEHICLE_WIDTH, X_FIXED_VEHICLE_HEIGHT);
-    Error_Checker(SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255), "SDL_SetRenderDrawColor", window);
-    Error_Checker(SDL_RenderFillRect(renderer, &test), "SDL_RenderFillRect", window);
-
-    SDL_RenderPresent(renderer);
-
-    frame_time = SDL_GetTicks() - frame_start;
-    if (FRAME_DELAY > frame_time) {
-      SDL_Delay(FRAME_DELAY - frame_time); // Delay to maintain frame rate
-    }
-  }
-
-  free(vehicles);
-
-  return NULL;
-}
-
-void Determine_Vehicle_Direction_And_Initial_Position(Vehicle *vehicle, int lane) {
+void Determine_Vehicle_Properties(Vehicle *vehicle, int lane) {
   /* 1 and 2 are the determiner 
    * 1 -> defines the vertical direction
    * 2 -> defines the horizontal direction
