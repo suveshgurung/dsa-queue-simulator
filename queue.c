@@ -33,7 +33,6 @@ int Is_Vehicle_Queue_Full(Vehicle_Queue *q) {
 
 void Enqueue_Vehicle(Vehicle_Queue *q, Vehicle v) {
   if (Is_Vehicle_Queue_Full(q)) {
-    fprintf(stderr, "The vehicle queue is full. No more vehicles can be accomodated\n");
     return;
   }
 
@@ -45,8 +44,6 @@ void Enqueue_Vehicle(Vehicle_Queue *q, Vehicle v) {
 
 Vehicle Dequeue_Vehicle(Vehicle_Queue *q) {
   if (Is_Vehicle_Queue_Empty(q)) {
-    fprintf(stderr, "The vehicle queue is empty.\n");
-
     /* indication of error */
     Vehicle error;
     error.direction = -1;

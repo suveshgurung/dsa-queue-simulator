@@ -180,7 +180,7 @@ int main() {
         }
       }
 
-      for (int j = 0; j < vehicle_queue[i].size; j++) {
+      for (int j = vehicle_queue[i].front + 1; j < vehicle_queue[i].size; j++) {
         Set_Rectangle_Dimensions(&vehicles[vehicles_index], vehicle_queue[i].vehicles[j].x, vehicle_queue[i].vehicles[j].y, vehicle_queue[i].vehicles[j].w, vehicle_queue[i].vehicles[j].h);
         vehicles_index++;
       }
@@ -527,42 +527,140 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
   for (int i = 0; i < NUMBER_OF_LANES; i++) {
     /* change the position of first vehicle in the queue */
     if (i == L_A1) {
-      /* need to implement for lane L_A1 */
+      /* the vehicle needs to get out of the screen */
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y >= (-X_FIXED_VEHICLE_HEIGHT)) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y -= VEHICLE_SPEED;
+        }
+        else {
+          Dequeue_Vehicle(&vehicle_queue[i]);
+        }
+      }
     }
-    else if (i == L_A2 || i == L_A3) {
-      if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y <= A_AND_D_FIXED_STOPPING_POINT) {
-        vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y += VEHICLE_SPEED;
+    else if (i == L_A2) {
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y <= A_AND_D_FIXED_STOPPING_POINT) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y += VEHICLE_SPEED;
+        }
+      } 
+    }
+    else if (i == L_A3) {
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y <= fixed_y_coordinate[L_B1]) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y += VEHICLE_SPEED;
+        }
+        else {
+          /* the vehicle now goes to lane B1 */
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].w = Y_FIXED_VEHICLE_WIDTH;
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].h = Y_FIXED_VEHICLE_HEIGHT;
+          Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[i]);
+          Enqueue_Vehicle(&vehicle_queue[L_B1], dequeued_vehicle);
+        }
       }
     }
     else if (i == L_B1) {
-      /* need to implement for lane L_B1 */
+      /* the vehicle needs to get out of the screen */
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x <= WINDOW_WIDTH + Y_FIXED_VEHICLE_WIDTH) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x += VEHICLE_SPEED;
+        }
+        else {
+          Dequeue_Vehicle(&vehicle_queue[i]);
+        }
+      }
     }
-    else if (i == L_B2 || i == L_B3) {
-      if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x >= B_AND_C_FIXED_STOPPING_POINT) {
-        vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x -= VEHICLE_SPEED;
+    else if (i == L_B2) {
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x >= B_AND_C_FIXED_STOPPING_POINT) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x -= VEHICLE_SPEED;
+        }
+      }
+    }
+    else if (i == L_B3) {
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x >= fixed_x_coordinate[L_C1]) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x -= VEHICLE_SPEED;
+        }
+        else {
+          /* the vehicle now goes to lane C1 */
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].w = X_FIXED_VEHICLE_WIDTH;
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].h = X_FIXED_VEHICLE_HEIGHT;
+          Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[i]);
+          Enqueue_Vehicle(&vehicle_queue[L_C1], dequeued_vehicle);
+        }
       }
     }
     else if (i == L_C1) {
-      /* need to implement for lane L_C1 */
+      /* the vehicle needs to get out of the screen */
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y <= WINDOW_HEIGHT + X_FIXED_VEHICLE_HEIGHT) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y += VEHICLE_SPEED;
+        }
+        else {
+          Dequeue_Vehicle(&vehicle_queue[i]);
+        }
+      }
     }
-    else if (i == L_C2 || i == L_C3) {
-      if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y >= B_AND_C_FIXED_STOPPING_POINT) {
-        vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y -= VEHICLE_SPEED;
+    else if (i == L_C2) {
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y >= B_AND_C_FIXED_STOPPING_POINT) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y -= VEHICLE_SPEED;
+        }
+      }
+    }
+    else if (i == L_C3) {
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y >= fixed_y_coordinate[L_D1]) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y -= VEHICLE_SPEED;
+        }
+        else {
+          /* the vehicle now goes to lane D1 */
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].w = Y_FIXED_VEHICLE_WIDTH;
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].h = Y_FIXED_VEHICLE_HEIGHT;
+          Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[i]);
+          Enqueue_Vehicle(&vehicle_queue[L_D1], dequeued_vehicle);
+        }
       }
     }
     else if (i == L_D1) {
-      /* need to implement for lane L_D1 */
+      /* the vehicle needs to get out of the screen */
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x >= -(Y_FIXED_VEHICLE_WIDTH)) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x -= VEHICLE_SPEED;
+        }
+        else {
+          Dequeue_Vehicle(&vehicle_queue[i]);
+        }
+      }
     }
-    else if (i == L_D2 || i == L_D3) {
-      if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x <= A_AND_D_FIXED_STOPPING_POINT) {
-        vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x += VEHICLE_SPEED;
+    else if (i == L_D2) {
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x <= A_AND_D_FIXED_STOPPING_POINT) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x += VEHICLE_SPEED;
+        }
+      }
+    }
+    else if (i == L_D3) {
+      if (vehicle_queue[i].size != 0) {
+        if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x <= fixed_x_coordinate[L_A1]) {
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x += VEHICLE_SPEED;
+        }
+        else {
+          /* the vehicle now goes to lane A1 */
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].w = X_FIXED_VEHICLE_WIDTH;
+          vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].h = X_FIXED_VEHICLE_HEIGHT;
+          Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[i]);
+          Enqueue_Vehicle(&vehicle_queue[L_A1], dequeued_vehicle);
+        }
       }
     }
 
     /* change the position of the remaining vehicles in the queue with respect to the preceeding vehicle */
     for (int j = vehicle_queue[i].front + 2; j < vehicle_queue[i].size; j++) {
       if (i == L_A1) {
-        /* need to implement for lane L_A1 */
+        if (vehicle_queue[i].vehicles[j].y >= vehicle_queue[i].vehicles[j - 1].y) {
+          vehicle_queue[i].vehicles[j].y -= VEHICLE_SPEED;
+        }
       }
       else if (i == L_A2 || i == L_A3) {
         if (vehicle_queue[i].vehicles[j].y <= vehicle_queue[i].vehicles[j - 1].y - DISTANCE_BETWEEN_VEHICLES) {
@@ -570,7 +668,9 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
         }
       }
       else if (i == L_B1) {
-        /* need to implement for lane L_B1 */
+        if (vehicle_queue[i].vehicles[j].x <= vehicle_queue[i].vehicles[j - 1].x + DISTANCE_BETWEEN_VEHICLES) {
+          vehicle_queue[i].vehicles[j].x += VEHICLE_SPEED;
+        }
       }
       else if (i == L_B2 || i == L_B3) {
         if (vehicle_queue[i].vehicles[j].x >= vehicle_queue[i].vehicles[j - 1].x + DISTANCE_BETWEEN_VEHICLES) {
@@ -578,7 +678,9 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
         }
       }
       else if (i == L_C1) {
-        /* need to implement for lane L_C1 */
+        if (vehicle_queue[i].vehicles[j].y <= vehicle_queue[i].vehicles[j - 1].y + DISTANCE_BETWEEN_VEHICLES) {
+          vehicle_queue[i].vehicles[j].y += VEHICLE_SPEED;
+        }
       }
       else if (i == L_C2 || i == L_C3) {
         if (vehicle_queue[i].vehicles[j].y >= vehicle_queue[i].vehicles[j - 1].y + DISTANCE_BETWEEN_VEHICLES) {
@@ -586,7 +688,9 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
         }
       }
       else if (i == L_D1) {
-        /* need to implement for lane L_B1 */
+        if (vehicle_queue[i].vehicles[j].x >= vehicle_queue[i].vehicles[j - 1].x - DISTANCE_BETWEEN_VEHICLES) {
+          vehicle_queue[i].vehicles[j].x -= VEHICLE_SPEED;
+        }
       }
       else if (i == L_D2 || i == L_D3) {
         if (vehicle_queue[i].vehicles[j].x <= vehicle_queue[i].vehicles[j - 1].x - DISTANCE_BETWEEN_VEHICLES) {
