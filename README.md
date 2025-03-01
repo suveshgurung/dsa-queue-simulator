@@ -4,6 +4,10 @@ This project simulates a traffic condition at a crossroads of two roads. It make
 
 **NOTE**: This project is native to linux only.
 
+## Prerequisite
+
+In order to run this program, you should have [SDL2] and [gcc] installed.
+
 ## Build
 
 To build the project, run the command:
@@ -25,3 +29,12 @@ This will start the simulator where empty roads are seen. To generate traffic in
 This will start generating traffic randomly and send the generated traffic to the simulator using sockets.
 \
 On receiving the randomly generated traffic, the simulator should properly simulate the vehicles and the traffic management.
+
+## References
+
+[https://wiki.libsdl.org/SDL2/FrontPage](https://wiki.libsdl.org/SDL2/FrontPage)
+[https://www.geeksforgeeks.org/mutex-lock-for-linux-thread-synchronization/](https://www.geeksforgeeks.org/mutex-lock-for-linux-thread-synchronization/)
+
+[//]: # (This is the referencing of the links.)
+[SDL2]: <https://wiki.libsdl.org/SDL2/Installation>
+[gcc]: <https://gcc.gnu.org/install/>
