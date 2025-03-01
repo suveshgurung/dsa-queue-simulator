@@ -22,6 +22,7 @@
 #define DISTANCE_BETWEEN_VEHICLES 40
 #define A_AND_D_FIXED_STOPPING_POINT 315
 #define B_AND_C_FIXED_STOPPING_POINT 555
+#define TIME_TO_PASS_ONE_VEHICLE 20000
 
 extern int running;
 extern int generator_requesting_connection;
@@ -64,7 +65,9 @@ void *Parse_Received_Data(void *);
 void *Check_For_Connection_And_Received_Data(void *);
 
 void Determine_Vehicle_Properties(Vehicle *, int);
-void Change_Vehicle_Position(Vehicle_Queue *);
+void Change_Vehicle_Position_Of_Second_Lane();
+void Change_Vehicle_Position(Vehicle_Queue *, Lane_Queue *);
+
 
 void Signal_Handler(int);
 

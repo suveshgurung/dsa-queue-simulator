@@ -1,7 +1,7 @@
 /* TODO : see how to render traffic lights */
-/* TODO : change the position of vehicles */
 #include "simulator.h"
 #include "queue.h"
+#include <SDL2/SDL_timer.h>
 #include <stdlib.h>
 #include <string.h>
 #include <SDL2/SDL.h>
@@ -156,7 +156,7 @@ int main() {
       }
     }
 
-    Change_Vehicle_Position(vehicle_queue);
+    Change_Vehicle_Position(vehicle_queue, &lane_queue);
 
     SDL_Rect *vehicles = NULL;
 
@@ -523,7 +523,16 @@ void Determine_Vehicle_Properties(Vehicle *vehicle, int lane) {
   }
 }
 
-void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
+void Change_Vehicle_Position_Of_Second_Lane() {
+}
+
+void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue, Lane_Queue *lane_queue) {
+  int vehicles_served_at_once = 0;
+  static int current_condition_running = 0;
+  static int total_time_of_green_light;
+  static Lane_Data current_processing_lane;
+  static Uint32 previous_time;
+
   for (int i = 0; i < NUMBER_OF_LANES; i++) {
     /* change the position of first vehicle in the queue */
     if (i == L_A1) {
@@ -538,6 +547,7 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
       }
     }
     else if (i == L_A2) {
+      vehicles_served_at_once += vehicle_queue[i].size;
       if (vehicle_queue[i].size != 0) {
         if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y <= A_AND_D_FIXED_STOPPING_POINT) {
           vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y += VEHICLE_SPEED;
@@ -570,6 +580,7 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
       }
     }
     else if (i == L_B2) {
+      vehicles_served_at_once += vehicle_queue[i].size;
       if (vehicle_queue[i].size != 0) {
         if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x >= B_AND_C_FIXED_STOPPING_POINT) {
           vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x -= VEHICLE_SPEED;
@@ -602,6 +613,7 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
       }
     }
     else if (i == L_C2) {
+      vehicles_served_at_once += vehicle_queue[i].size;
       if (vehicle_queue[i].size != 0) {
         if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y >= B_AND_C_FIXED_STOPPING_POINT) {
           vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].y -= VEHICLE_SPEED;
@@ -634,6 +646,7 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
       }
     }
     else if (i == L_D2) {
+      vehicles_served_at_once += vehicle_queue[i].size;
       if (vehicle_queue[i].size != 0) {
         if (vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x <= A_AND_D_FIXED_STOPPING_POINT) {
           vehicle_queue[i].vehicles[vehicle_queue[i].front + 1].x += VEHICLE_SPEED;
@@ -699,6 +712,242 @@ void Change_Vehicle_Position(Vehicle_Queue *vehicle_queue) {
       }
     }
   }
+
+  if (!current_condition_running) {
+    vehicles_served_at_once = (vehicles_served_at_once == 0) ? 1 : vehicles_served_at_once / 4;
+    total_time_of_green_light = vehicles_served_at_once * TIME_TO_PASS_ONE_VEHICLE;
+
+    int diff_lane_A2 = vehicle_queue[L_A2].size - vehicles_served_at_once;
+    int diff_lane_B2 = vehicle_queue[L_B2].size - vehicles_served_at_once;
+    int diff_lane_C2 = vehicle_queue[L_C2].size - vehicles_served_at_once;
+    int diff_lane_D2 = vehicle_queue[L_D2].size - vehicles_served_at_once;
+    int diff_array[4] = { diff_lane_A2, diff_lane_B2, diff_lane_C2, diff_lane_D2 };
+
+    /* sort the diff array to calculate which lane to process first */
+    for (int i = 0; i < 3; i++) {
+      for (int j = i + 1; j < 4; j++) {
+        if (diff_array[j] < diff_array[i]) {
+          int temp = diff_array[i];
+          diff_array[i] = diff_array[j];
+          diff_array[j] = temp;
+        }
+      }
+    }
+
+    /* enqueue normal lanes according to the average number of vehicles */
+    for (int i = 0; i < 4; i++) {
+      if (diff_array[i] == diff_lane_A2) {
+        Lane_Data lane_A2 = {
+          .lane = L_A2,
+          .no_of_vehicle = vehicle_queue[L_A2].size,
+          .priority = 0
+        };
+        Enqueue_Lane(lane_queue, lane_A2);
+      }
+      else if (diff_array[i] == diff_lane_B2) {
+        Lane_Data lane_B2 = {
+          .lane = L_B2,
+          .no_of_vehicle = vehicle_queue[L_B2].size,
+          .priority = 0
+        };
+        Enqueue_Lane(lane_queue, lane_B2);
+      }
+      else if (diff_array[i] == diff_lane_C2) {
+        Lane_Data lane_C2 = {
+          .lane = L_C2,
+          .no_of_vehicle = vehicle_queue[L_C2].size,
+          .priority = 0
+        };
+        Enqueue_Lane(lane_queue, lane_C2);
+      }
+      else if (diff_array[i] == diff_lane_D2) {
+        Lane_Data lane_D2 = {
+          .lane = L_D2,
+          .no_of_vehicle = vehicle_queue[L_D2].size,
+          .priority = 0
+        };
+        Enqueue_Lane(lane_queue, lane_D2);
+      }
+    }
+
+    current_condition_running = 1;
+  }
+
+  if (current_condition_running) {
+    if (Is_Lane_Queue_Empty(lane_queue)) {
+      current_condition_running = 0;
+    }
+    else {
+      current_processing_lane = Dequeue_Lane(lane_queue);
+      previous_time = SDL_GetTicks();
+
+      /* process the lane for that amount of time. */
+      if (SDL_GetTicks() - previous_time > total_time_of_green_light) {
+        current_processing_lane = Dequeue_Lane(lane_queue);
+        previous_time = SDL_GetTicks();
+      }
+      else {
+        int lane = current_processing_lane.lane;
+        if (lane == L_A2) {
+          /* move the vehicle vertically downwards till the junction */
+          if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y < fixed_y_coordinate[L_B3]) {
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y += VEHICLE_SPEED * 3;
+          }
+          /* once the vehicle is at the junction of road C, move it towards L_C1 or L_D1 */
+          else if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y >= fixed_y_coordinate[L_B3]) {
+            /* generate some rotating effect */
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].w = Y_FIXED_VEHICLE_WIDTH;
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].h = Y_FIXED_VEHICLE_HEIGHT;
+
+            /* vehicle should move towards L_C1 */
+            if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].direction == D_DOWN) {
+              if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x <= fixed_x_coordinate[L_C1]) {
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x += VEHICLE_SPEED * 3;
+              }
+              else {
+                /* generate some rotating effect */
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].w = X_FIXED_VEHICLE_WIDTH;
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].h = X_FIXED_VEHICLE_HEIGHT;
+
+                /* vehicle now goes to L_C1 */
+                Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[lane]);
+                Enqueue_Vehicle(&vehicle_queue[L_C1], dequeued_vehicle);
+              }
+            }
+            else if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].direction == D_LEFT) {
+              /* vehicle now goes to L_D1 */
+              Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[lane]);
+              Enqueue_Vehicle(&vehicle_queue[L_D1], dequeued_vehicle);
+            }
+          }
+
+          for (int i = vehicle_queue[lane].front + 2; i < vehicle_queue[lane].size; i++) {
+            if (vehicle_queue[lane].vehicles[i].y <= vehicle_queue[lane].vehicles[i - 1].y - DISTANCE_BETWEEN_VEHICLES) {
+              vehicle_queue[lane].vehicles[i].y += VEHICLE_SPEED * 3;
+            }
+          }
+        }
+        else if (lane == L_B2) {
+          /* move the vehicle horizontally left till the junction */
+          if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x > fixed_x_coordinate[L_C3]) {
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x -= VEHICLE_SPEED * 3;
+          }
+          /* once the vehicle is at the junction of road C, move it towards L_C1 or L_D1 */
+          else if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x <= fixed_x_coordinate[L_C3]) {
+            /* generate some rotating effect */
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].w = X_FIXED_VEHICLE_WIDTH;
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].h = X_FIXED_VEHICLE_HEIGHT;
+
+            /* vehicle should move towards L_D1 */
+            if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].direction == D_LEFT) {
+              if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y <= fixed_y_coordinate[L_D1]) {
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y += VEHICLE_SPEED * 3;
+              }
+              else {
+                /* generate some rotating effect */
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].w = Y_FIXED_VEHICLE_WIDTH;
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].h = Y_FIXED_VEHICLE_HEIGHT;
+
+                /* vehicle now goes to L_C1 */
+                Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[lane]);
+                Enqueue_Vehicle(&vehicle_queue[L_D1], dequeued_vehicle);
+              }
+            }
+            else if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].direction == D_UP) {
+              /* vehicle now goes to L_A1 */
+              Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[lane]);
+              Enqueue_Vehicle(&vehicle_queue[L_A1], dequeued_vehicle);
+            }
+          }
+
+          for (int i = vehicle_queue[lane].front + 2; i < vehicle_queue[lane].size; i++) {
+            if (vehicle_queue[lane].vehicles[i].x >= vehicle_queue[lane].vehicles[i - 1].x + DISTANCE_BETWEEN_VEHICLES) {
+              vehicle_queue[lane].vehicles[i].x -= VEHICLE_SPEED * 3;
+            }
+          }
+        }
+        else if (lane == L_C2) {
+          /* move the vehicle vertically till the junction */
+          if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y > fixed_y_coordinate[L_B1]) {
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y -= VEHICLE_SPEED * 3;
+          }
+          /* once the vehicle is at the junction of road C, move it towards L_C1 or L_D1 */
+          else if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y <= fixed_y_coordinate[L_B1]) {
+            /* generate some rotating effect */
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].w = Y_FIXED_VEHICLE_WIDTH;
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].h = Y_FIXED_VEHICLE_HEIGHT;
+
+            /* vehicle should move towards L_A1 */
+            if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].direction == D_UP) {
+              if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x >= fixed_x_coordinate[L_A1]) {
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x -= VEHICLE_SPEED * 3;
+              }
+              else {
+                /* generate some rotating effect */
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].w = X_FIXED_VEHICLE_WIDTH;
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].h = X_FIXED_VEHICLE_HEIGHT;
+
+                /* vehicle now goes to L_A1 */
+                Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[lane]);
+                Enqueue_Vehicle(&vehicle_queue[L_A1], dequeued_vehicle);
+              }
+            }
+            else if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].direction == D_RIGHT) {
+              /* vehicle now goes to L_B1 */
+              Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[lane]);
+              Enqueue_Vehicle(&vehicle_queue[L_B1], dequeued_vehicle);
+            }
+          }
+
+          for (int i = vehicle_queue[lane].front + 2; i < vehicle_queue[lane].size; i++) {
+            if (vehicle_queue[lane].vehicles[i].y >= vehicle_queue[lane].vehicles[i - 1].y + DISTANCE_BETWEEN_VEHICLES) {
+              vehicle_queue[lane].vehicles[i].y -= VEHICLE_SPEED * 3;
+            }
+          }
+        }
+        else if (lane == L_D2) {
+          /* move the vehicle horizontally right till the junction */
+          if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x < fixed_x_coordinate[L_C1]) {
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x += VEHICLE_SPEED * 3;
+          }
+          /* once the vehicle is at the junction, move it towards L_B1 or L_C1 */
+          else if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].x >= fixed_x_coordinate[L_C1]) {
+            /* generate some rotating effect */
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].w = X_FIXED_VEHICLE_WIDTH;
+            vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].h = Y_FIXED_VEHICLE_HEIGHT;
+
+            /* vehicle should move towards L_B1 */
+            if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].direction == D_RIGHT) {
+              if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y >= fixed_y_coordinate[L_B1]) {
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].y -= VEHICLE_SPEED * 3;
+              }
+              else {
+                /* generate some rotating effect */
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].w = Y_FIXED_VEHICLE_WIDTH;
+                vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].h = Y_FIXED_VEHICLE_HEIGHT;
+
+                /* vehicle now goes to L_B1 */
+                Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[lane]);
+                Enqueue_Vehicle(&vehicle_queue[L_B1], dequeued_vehicle);
+              }
+            }
+            else if (vehicle_queue[lane].vehicles[vehicle_queue[lane].front + 1].direction == D_DOWN) {
+              /* vehicle now goes to L_C1 */
+              Vehicle dequeued_vehicle = Dequeue_Vehicle(&vehicle_queue[lane]);
+              Enqueue_Vehicle(&vehicle_queue[L_C1], dequeued_vehicle);
+            }
+          }
+
+          for (int i = vehicle_queue[lane].front + 2; i < vehicle_queue[lane].size; i++) {
+            if (vehicle_queue[lane].vehicles[i].x <= vehicle_queue[lane].vehicles[i - 1].x - DISTANCE_BETWEEN_VEHICLES) {
+              vehicle_queue[lane].vehicles[i].x += VEHICLE_SPEED * 3;
+            }
+          }
+        }
+      }
+    }
+  }
+
 }
 
 void Signal_Handler(int signal) {
