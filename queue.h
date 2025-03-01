@@ -59,7 +59,7 @@ typedef struct Vehicle {
 } Vehicle;
 
 /* NOTE: we take the vehicle queue as a circular queue */
-typedef struct Queue {
+typedef struct Vehicle_Queue {
   int front;
   int rear;
   Vehicle vehicles[MAX_VEHICLE_QUEUE_SIZE];
@@ -91,5 +91,6 @@ void Init_Lane_Queue(Lane_Queue *);
 int Is_Lane_Queue_Empty(Lane_Queue *);
 int Is_Lane_Queue_Full(Lane_Queue *);
 void Enqueue_Lane(Lane_Queue *, Lane_Data);
+Lane_Data Dequeue_Lane(Lane_Queue *);
 
 #endif

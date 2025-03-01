@@ -33,6 +33,7 @@ On receiving the randomly generated traffic, the simulator should properly simul
 ## References
 
 [https://wiki.libsdl.org/SDL2/FrontPage](https://wiki.libsdl.org/SDL2/FrontPage)
+\
 [https://www.geeksforgeeks.org/mutex-lock-for-linux-thread-synchronization/](https://www.geeksforgeeks.org/mutex-lock-for-linux-thread-synchronization/)
 
 [//]: # (This is the referencing of the links.)
