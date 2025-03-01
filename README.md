@@ -4,7 +4,7 @@ This project simulates a traffic condition at a crossroads of two roads. It make
 
 **NOTE**: This project is native to linux only.
 
-[Watch the demo video](https://github.com/suveshgurung/dsa-queue-simulator/blob/main/demo_video.mp4)
+![Demo video](demo_video.gif)
 
 ## Prerequisite
 
