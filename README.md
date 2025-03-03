@@ -6,6 +6,9 @@ This project simulates a traffic condition at a crossroads of two roads. It make
 
 ![Demo video](demo_video.gif)
 
+**NOTE** The GIF video is laggy. Hence, a proper video has been uploaded in the following drive link:
+[Drive link](https://drive.google.com/file/d/1m1uab_FqIxPbBdqf6y8kl9Gn-aYEP_5z/view?usp=sharing)
+
 ## Prerequisite
 
 In order to run this program, you should have [SDL2] and [gcc] installed.
